@@ -20,8 +20,8 @@ const AdminDashboard = () => {
     { icon: <Globe size={20} />, label: 'College Website', desc: 'nationaldegreecollegenandyal.ac.in', color: 'bg-green-500/10 text-green-500', onClick: () => window.open(COLLEGE_WEBSITE, '_blank') },
     { icon: <Bell size={20} />, label: 'Manage Notifications', desc: 'Post new notifications', color: 'bg-blue-500/10 text-blue-500', onClick: () => navigate('/notifications') },
     { icon: <FileText size={20} />, label: 'Manage Circulars', desc: 'Post new circulars', color: 'bg-purple-500/10 text-purple-500', onClick: () => navigate('/circulars') },
-    { icon: <Users size={20} />, label: 'Lecturers', desc: 'View all lecturers by department', color: 'bg-amber-500/10 text-amber-500', onClick: () => navigate('/lecturers') },
-    { icon: <GraduationCap size={20} />, label: 'Students', desc: 'View all students by group/section', color: 'bg-teal-500/10 text-teal-500', onClick: () => navigate('/students') },
+    { icon: <Users size={20} />, label: 'Lecturers', desc: 'View all lecturers by department', color: 'bg-amber-500/10 text-amber-500', onClick: () => navigate("/admin/lecturers")},
+    { icon: <GraduationCap size={20} />, label: 'Students', desc: 'View all students by group/section', color: 'bg-teal-500/10 text-teal-500', onClick: () => navigate('/admin/students') },
   ];
 
   return (

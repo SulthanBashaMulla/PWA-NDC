@@ -10,6 +10,8 @@ import Notifications from "./pages/Notifications";
 import Circulars from "./pages/Circulars";
 import Marks from "./pages/Marks";
 import Attendance from "./pages/Attendance";
+import LecturersListPage from "./components/LecturersListPage";
+import StudentsListPage  from "./components/StudentsListPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
             <Route path="/circulars" element={<Circulars />} />
             <Route path="/marks" element={<Marks />} />
             <Route path="/attendance" element={<Attendance />} />
+            <Route path="/admin/lecturers" element={<LecturersListPage />} />
+<Route path="/admin/students"  element={<StudentsListPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
