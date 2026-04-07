@@ -4,7 +4,7 @@ import StudentDashboard from '@/components/StudentDashboard';
 import LecturerDashboard from '@/components/LecturerDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
 
-const DashboardPage = () => {
+const Dashboard = () => {
   const { user } = useAuth();
   if (!user) return <LoginPage />;
   if (user.role === 'student') return <StudentDashboard />;
@@ -12,10 +12,4 @@ const DashboardPage = () => {
   return <AdminDashboard />;
 };
 
-const Index = () => {
-  const { user } = useAuth();
-  if (!user) return <LoginPage />;
-  return <DashboardPage />;
-};
-
-export default Index;
+export default Dashboard;
