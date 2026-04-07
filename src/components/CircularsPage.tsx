@@ -4,6 +4,12 @@ import AnimatedBackground from './AnimatedBackground';
 import Navbar from './Navbar';
 import { FileText } from 'lucide-react';
 
+
+useEffect(() => {
+  if (DEMO_CIRCULARS.length > 0) {
+    localStorage.setItem("seen_circular", DEMO_CIRCULARS[0].id);
+  }
+}, []);
 const CircularsPage = () => {
   const circulars = DEMO_CIRCULARS;
 

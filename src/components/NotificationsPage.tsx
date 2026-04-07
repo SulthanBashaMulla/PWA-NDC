@@ -4,6 +4,12 @@ import AnimatedBackground from './AnimatedBackground';
 import Navbar from './Navbar';
 import { Bell } from 'lucide-react';
 
+useEffect(() => {
+  if (DEMO_NOTICES.length > 0) {
+    localStorage.setItem("seen_notice", DEMO_NOTICES[0].id);
+  }
+}, []);
+
 const NotificationsPage = () => {
   const notices = DEMO_NOTICES;
 
