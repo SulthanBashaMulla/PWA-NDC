@@ -3,17 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import GlassCard from './GlassCard';
 import AnimatedBackground from './AnimatedBackground';
 import Navbar from './Navbar';
-import { DEMO_CIRCULARS, DEMO_NOTICES } from '@/lib/sheets';
-import { COLLEGE_WEBSITE } from '@/config/college';
 import { Bell, FileText, Globe, Users, GraduationCap, Shield } from 'lucide-react';
+import { COLLEGE_WEBSITE } from '@/config/college';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
-  const latestNotice = DEMO_NOTICES[0];
-  const latestCircular = DEMO_CIRCULARS[0];
-  
+
   const cards = [
     { icon: <Bell size={22} />, label: 'Notifications', onClick: () => navigate('/notifications') },
     { icon: <FileText size={22} />, label: 'Circulars', onClick: () => navigate('/circulars') },
@@ -22,68 +18,66 @@ const AdminDashboard = () => {
     { icon: <GraduationCap size={22} />, label: 'Students', onClick: () => navigate('/admin/students') },
     { icon: <Bell size={22} />, label: 'Manage Notices', onClick: () => navigate('/notifications') },
   ];
-  
+
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-blue-400 via-white to-orange-200">
+    <div className="relative min-h-screen bg-gradient-to-br from-blue-300 via-white to-orange-200">
+
+      {/* Background Animation */}
       <AnimatedBackground />
 
       <div className="relative z-10">
         <Navbar />
 
-        <div className="p-4 md:p-6 w-full">
+        <div className="p-4 md:p-6 w-full space-y-4">
 
-          {/* PROFILE */}
-          <GlassCard strong className="mb-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-400/20">
-                <Shield size={28} className="text-orange-500" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold">{user?.name}</h2>
-                <p className="text-sm text-gray-600">{user?.designation}</p>
-              </div>
+          {/* PROFILE CARD */}
+          <GlassCard className="p-4 flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-400/20">
+              <Shield size={28} className="text-orange-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">{user?.name || "Admin"}</h2>
+              <p className="text-sm text-gray-600">{user?.designation || "Administrator"}</p>
             </div>
           </GlassCard>
 
-          {/* MAIN GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* OVERVIEW TITLE */}
+          <h3 className="text-gray-700 font-semibold px-1">
+            Overview
+          </h3>
 
-            {/* LEFT GRID */}
-            <div className="md:col-span-2 grid grid-cols-2 gap-4">
-              {cards.map((c, i) => (
-                <GlassCard
-                  key={i}
-                  className="aspect-square flex flex-col justify-center items-center cursor-pointer"
-                  onClick={c.onClick}
-                >
-                  <div className="bg-blue-500/20 p-3 rounded-xl mb-2">
-                    {c.icon}
-                  </div>
-                  <p className="text-sm font-semibold text-center">{c.label}</p>
-                </GlassCard>
-              ))}
-            </div>
+          {/* GRID DASHBOARD */}
+          <div className="grid grid-cols-2 gap-4">
 
-            {/* RIGHT PANEL */}
-            <GlassCard className="md:col-span-1 md:row-span-2 flex flex-col justify-between">
-              <div>
-                <h3 className="text-lg font-bold mb-2">Overview</h3>
-                <p className="text-sm text-gray-600">
-                  Welcome back! Manage everything from this dashboard.
+            {cards.map((card, index) => (
+              <GlassCard
+                key={index}
+                onClick={card.onClick}
+                className="
+                  aspect-square 
+                  flex flex-col 
+                  items-center 
+                  justify-center 
+                  text-center 
+                  cursor-pointer
+                  transition-all duration-300
+                  hover:scale-105
+                "
+              >
+                {/* ICON */}
+                <div className="bg-blue-400/20 p-3 rounded-xl mb-2">
+                  {card.icon}
+                </div>
+
+                {/* LABEL */}
+                <p className="text-sm font-semibold text-gray-700">
+                  {card.label}
                 </p>
-              </div>
-
-              <div className="mt-6 space-y-3">
-                <div className="bg-blue-500/10 p-3 rounded-lg text-sm">
-                  📢 {latestNotice?.Title || 'No notifications'}
-                </div>
-                <div className="bg-orange-500/10 p-3 rounded-lg text-sm">
-                  📄 {latestCircular?.Title || 'No circulars'}
-                </div>
-              </div>
-            </GlassCard>
+              </GlassCard>
+            ))}
 
           </div>
+
         </div>
       </div>
     </div>
