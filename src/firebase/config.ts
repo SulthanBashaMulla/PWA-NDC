@@ -3,18 +3,36 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
+// ── Validate required env vars at startup ────────────────────
+const required = [
+  "VITE_FIREBASE_API_KEY",
+  "VITE_FIREBASE_AUTH_DOMAIN",
+  "VITE_FIREBASE_PROJECT_ID",
+  "VITE_FIREBASE_APP_ID",
+] as
+const;
+
+for (const key of required) {
+  if (!import.meta.env[key]) {
+    throw new Error(
+      `Missing environment variable: ${key}. ` +
+      "Create a .env.local file — see .env.local.example"
+    );
+  }
+}
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAfJIPvOLuGM1j8ET35fPtLQd2PRMPbd1o",
-  authDomain: "ndc-student-managment.firebaseapp.com",
-  projectId: "ndc-student-managment",
-  storageBucket: "ndc-student-managment.firebasestorage.app",
-  messagingSenderId: "563452237750",
-  appId: "1:563452237750:web:796ba1af00bb0882c3d317",
-  measurementId: "G-PJ7618ZEYE"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db   = getFirestore(app);
+export const db = getFirestore(app);
 export default app;

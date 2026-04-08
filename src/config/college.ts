@@ -12,44 +12,50 @@ export const COLLEGE_SHORT   = "NDC";
 export const COLLEGE_PLACE   = "Nandyal";
 export const COLLEGE_WEBSITE = "https://ndcndl.org";
 
-// Upload logo to imgbb.com → paste direct link here
-export const COLLEGE_LOGO_URL = "https://i.postimg.cc/VknRXB1B/1000340942-removebg-preview.png";
+export const COLLEGE_LOGO_URL =
+  "https://i.postimg.cc/VknRXB1B/1000340942-removebg-preview.png";
 
 // ── Fixed values ─────────────────────────────────────────────
 export const SEMESTERS = [1, 2, 3, 4, 5, 6];
 
 export const MONTHS = [
   "June", "July", "August", "September", "October",
-  "November", "December", "January", "February", "March"
+  "November", "December", "January", "February", "March",
 ];
 
-// ── Config sheet URLs (safe to publish — no personal data) ───
+// ── Config sheet URLs (public — read-only, no personal data) ──
 export const CONFIG_SHEET_URLS = {
-  groups:   "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGGqui8A13632DbW6G-h7hci6vL-I8IoQSqW6cuHgeGatgXxXk0vAho4LDz2vHjJsIfwSa8W0fkRfm/pub?gid=602607246&single=true&output=csv",
-  subjects: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGGqui8A13632DbW6G-h7hci6vL-I8IoQSqW6cuHgeGatgXxXk0vAho4LDz2vHjJsIfwSa8W0fkRfm/pub?gid=1731213369&single=true&output=csv",
+  groups:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGGqui8A13632DbW6G-h7hci6vL-I8IoQSqW6cuHgeGatgXxXk0vAho4LDz2vHjJsIfwSa8W0fkRfm/pub?gid=602607246&single=true&output=csv",
+  subjects:
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGGqui8A13632DbW6G-h7hci6vL-I8IoQSqW6cuHgeGatgXxXk0vAho4LDz2vHjJsIfwSa8W0fkRfm/pub?gid=1731213369&single=true&output=csv",
 };
 
-// ── Student data spreadsheet ID ───────────────────────────────
-// Get this from your NDC Student Data spreadsheet URL:
-// https://docs.google.com/spreadsheets/d/THIS_PART/edit
-export const DATA_SHEET_ID = "YOUR_STUDENT_DATA_SPREADSHEET_ID";
-
-// ── Notices & Circulars (Firestore-based) ────────────────────
-export const NOTICES_SHEET_URL   = "";
-export const CIRCULARS_SHEET_URL = "";
+// ── Student data spreadsheet ID — read from env ───────────────
+// Set VITE_SHEET_ID in your .env.local file
+export const DATA_SHEET_ID: string = (() => {
+  const id = import.meta.env.VITE_SHEET_ID as string | undefined;
+  if (!id) {
+    console.warn(
+      "[college.ts] VITE_SHEET_ID is not set. " +
+      "Attendance and marks data will not load. Add it to .env.local"
+    );
+  }
+  return id ?? "";
+})();
 
 // ── Types ────────────────────────────────────────────────────
 export interface GroupConfig {
-  groupCode: string;   // e.g. "BCA"
-  fullName:  string;   // e.g. "Bachelor of Computer Applications"
-  sections:  string[]; // e.g. ["A","B","C"]
+  groupCode: string;
+  fullName:  string;
+  sections:  string[];
 }
 
 export interface SubjectConfig {
-  groupCode:   string; // e.g. "BCA"
-  semester:    number; // e.g. 1
-  subjectCode: string; // e.g. "BCA101"
-  subjectName: string; // e.g. "Computer Fundamentals"
+  groupCode:   string;
+  semester:    number;
+  subjectCode: string;
+  subjectName: string;
 }
 
 // ── Cache ─────────────────────────────────────────────────────
@@ -57,8 +63,6 @@ let cachedGroups:   GroupConfig[]   | null = null;
 let cachedSubjects: SubjectConfig[] | null = null;
 
 // ── Fetch Groups ──────────────────────────────────────────────
-// Sheet columns: GroupCode | FullName | Sections
-// Sections is comma-separated: "A,B,C"
 export async function fetchGroups(): Promise<GroupConfig[]> {
   if (cachedGroups) return cachedGroups;
 
@@ -72,16 +76,15 @@ export async function fetchGroups(): Promise<GroupConfig[]> {
         groupCode: String(row.GroupCode || row.groupCode || "").trim(),
         fullName:  String(row.FullName  || row.fullName  || "").trim(),
         sections:  String(row.Sections  || row.sections  || "A")
-                     .split(",")
-                     .map((s: string) => s.trim())
-                     .filter(Boolean),
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean),
       }))
       .filter((g: GroupConfig) => g.groupCode);
 
     return cachedGroups;
   } catch (err) {
     console.error("Failed to fetch groups, using fallback:", err);
-    // Fallback — NDC degree groups
     cachedGroups = [
       { groupCode: "BCA",     fullName: "Bachelor of Computer Applications",   sections: ["A","B","C"] },
       { groupCode: "BSc CS",  fullName: "BSc Computer Science",                sections: ["A","B","C"] },
@@ -98,7 +101,6 @@ export async function fetchGroups(): Promise<GroupConfig[]> {
 }
 
 // ── Fetch Subjects ────────────────────────────────────────────
-// Sheet columns: GroupCode | Semester | SubjectCode | SubjectName
 export async function fetchSubjects(): Promise<SubjectConfig[]> {
   if (cachedSubjects) return cachedSubjects;
 
@@ -149,15 +151,15 @@ export function clearConfigCache() {
   cachedSubjects = null;
 }
 
-// ── Build CSV URL dynamically for any group+section ──────────
-// Tab names in your data sheet: "BCA-A-Attendance", "BCA-A-Marks"
+// ── Build CSV URL for any group+section ──────────────────────
 export function buildSheetCsvUrl(
   group: string,
   section: string,
   type: "Attendance" | "Marks"
 ): string {
-  const tabName   = `${group}-${section}-${type}`;
-  const encoded   = encodeURIComponent(tabName);
+  if (!DATA_SHEET_ID) return "";
+  const tabName = `${group}-${section}-${type}`;
+  const encoded = encodeURIComponent(tabName);
   return `https://docs.google.com/spreadsheets/d/${DATA_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encoded}`;
 }
 

@@ -1,5 +1,7 @@
 // src/hooks/usePWA.ts
-// Handles service worker registration + install prompt
+// Handles PWA install prompt.
+// Service worker is registered automatically by vite-plugin-pwa
+// (registerType: "autoUpdate" in vite.config.ts) — do NOT register manually.
 
 import { useState, useEffect } from "react";
 
@@ -12,28 +14,14 @@ export function usePWA() {
   const [installPrompt, setInstallPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [swRegistered, setSwRegistered] = useState(false);
 
   useEffect(() => {
-    // Register service worker
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/service-worker.js")
-        .then((reg) => {
-          console.log("[PWA] Service worker registered:", reg.scope);
-          setSwRegistered(true);
-        })
-        .catch((err) => {
-          console.error("[PWA] Service worker failed:", err);
-        });
-    }
-
-    // Detect if already installed
+    // Detect if already running as installed PWA
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
     }
 
-    // Capture install prompt (Android Chrome)
+    // Capture install prompt (Android Chrome / Edge)
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
@@ -41,13 +29,16 @@ export function usePWA() {
     window.addEventListener("beforeinstallprompt", handler);
 
     // Detect successful install
-    window.addEventListener("appinstalled", () => {
+    const onInstalled = () => {
       setIsInstalled(true);
       setInstallPrompt(null);
-      console.log("[PWA] App installed successfully");
-    });
+    };
+    window.addEventListener("appinstalled", onInstalled);
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   // Call this when user taps "Install App" button
@@ -58,5 +49,5 @@ export function usePWA() {
     if (outcome === "accepted") setInstallPrompt(null);
   };
 
-  return { installPrompt, isInstalled, swRegistered, promptInstall };
+  return { installPrompt, isInstalled, promptInstall };
 }

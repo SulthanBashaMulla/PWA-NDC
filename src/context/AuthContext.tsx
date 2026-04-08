@@ -1,87 +1,79 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+// src/context/AuthContext.tsx
+// Production-ready: uses real Firebase Auth + Firestore profile
+// Session persists across page refreshes via Firebase's built-in persistence
 
-export type UserRole = 'admin' | 'lecturer' | 'student';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import { onAuthChange, loginUser, logoutUser } from "@/firebase/auth";
+import { getUserProfile, UserProfile } from "@/firebase/firestore";
 
-export interface User {
-  uid: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  // Student fields
-  rollNo?: string;
-  group?: string;
-  section?: string;
-  semester?: number;
-  phone?: string;
-  // Lecturer fields
-  lecturerId?: string;
-  department?: string;
-  designation?: string;
-  isIncharge?: boolean;
-  // Admin fields
-  adminId?: string;
-}
+export type UserRole = "admin" | "lecturer" | "student";
+
+// Re-export UserProfile as User for backward compatibility
+export type User = UserProfile;
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (id: string, password: string, role: UserRole) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Demo users for development
-const DEMO_USERS: Record<string, User> = {
-  'admin001': {
-    uid: '1', email: 'admin001@college.admin', name: 'Dr. Suresh Kumar',
-    role: 'admin', adminId: 'admin001', designation: 'Principal', phone: '9876543210',
-  },
-  'LEC001': {
-    uid: '2', email: 'LEC001@college.lecturer', name: 'Prof. Anitha Rao',
-    role: 'lecturer', lecturerId: 'LEC001', department: 'Computer Science',
-    designation: 'Class Incharge', isIncharge: true, group: 'MPC', section: 'A',
-  },
-  'LEC002': {
-    uid: '3', email: 'LEC002@college.lecturer', name: 'Prof. Ramesh Babu',
-    role: 'lecturer', lecturerId: 'LEC002', department: 'Physics',
-    designation: 'Assistant Professor', isIncharge: false,
-  },
-  '23CS001': {
-    uid: '4', email: '23CS001@college.student', name: 'Ravi Kumar',
-    role: 'student', rollNo: '23CS001', group: 'MPC', section: 'A', semester: 3, phone: '9876543211',
-  },
-};
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Start as true — we don't know auth state yet until Firebase responds
+  const [loading, setLoading] = useState(true);
 
-  const login = useCallback(async (id: string, _password: string, role: UserRole) => {
-    setLoading(true);
-    // Simulate network delay
-    await new Promise(r => setTimeout(r, 1200));
+  // ── Listen for Firebase Auth state changes ───────────────────
+  // This fires on page load (restoring session) and on login/logout
+  useEffect(() => {
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const profile = await getUserProfile(firebaseUser.uid);
+          if (profile && profile.status === "active") {
+            setUser(profile);
+          } else {
+            // Profile missing or inactive — sign them out
+            await logoutUser();
+            setUser(null);
+          }
+        } catch {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
 
-    const demoUser = DEMO_USERS[id];
-    if (demoUser && demoUser.role === role) {
-      setUser(demoUser);
-    } else {
-      // For demo, create a generic user
-      const genericUser: User = {
-        uid: Date.now().toString(),
-        email: `${id}@college.${role}`,
-        name: id,
-        role,
-        ...(role === 'student' ? { rollNo: id, group: 'MPC', section: 'A', semester: 3 } : {}),
-        ...(role === 'lecturer' ? { lecturerId: id, department: 'General', designation: 'Lecturer', isIncharge: false } : {}),
-        ...(role === 'admin' ? { adminId: id, designation: 'Admin' } : {}),
-      };
-      setUser(genericUser);
-    }
-    setLoading(false);
+    return unsubscribe;
   }, []);
 
-  const logout = useCallback(() => {
+  const login = useCallback(
+    async (id: string, password: string, role: UserRole) => {
+      setLoading(true);
+      try {
+        const { profile } = await loginUser(id, password, role);
+        setUser(profile as User);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const logout = useCallback(async () => {
+    await logoutUser();
     setUser(null);
   }, []);
 
@@ -94,6 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 };
