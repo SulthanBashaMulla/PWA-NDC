@@ -1,84 +1,309 @@
-import Papa from 'papaparse';
-import { CIRCULARS_SHEET_URL, NOTICES_SHEET_URL } from '@/config/college';
+// src/sheets/sheetsAPI.ts
+// ═══════════════════════════════════════════════════════════
+// Google Sheets API v4 — write-back for class incharge lecturers
+// Works dynamically for any group/section — no hardcoding needed
+// ═══════════════════════════════════════════════════════════
 
+// ⚠️  IMPORTANT: Rotate this key in Google Cloud Console
+// and restrict it to Sheets API only
+const SHEETS_API_KEY = "AIzaSyAOIskWFvW_-kp_rhtMT8050rzyTF1js10";
+
+// ── Row types ─────────────────────────────────────────────────
 export interface AttendanceRow {
-  RollNo: string;
-  Name: string;
-  Month: string;
-  DaysPresent: string;
-  TotalDays: string;
-  Percentage: string;
-  Semester: string;
+  rollNo:      string;
+  name:        string;
+  month:       string;
+  daysPresent: number;
+  totalDays:   number;
+  percentage:  number;
+  semester:    number;
 }
 
 export interface MarksRow {
-  RollNo: string;
-  Name: string;
-  Subject: string;
-  Mid1: string;
-  Mid2: string;
-  Semester: string;
+  rollNo:   string;
+  name:     string;
+  subject:  string;
+  mid1:     number;
+  mid2:     number;
+  semester: number;
 }
 
-export interface CircularRow {
-  Title: string;
-  Description: string;
-  Date: string;
-  PostedBy: string;
+// ── Extract spreadsheet ID from any Google Sheets URL ─────────
+// Works with both:
+// /spreadsheets/d/ID/edit  (editor URL)
+// /spreadsheets/d/ID/gviz  (CSV URL)
+// /e/PUBLISHED_ID/pub      (published URL — cannot write, only read)
+export function extractSheetId(url: string): string {
+  // Standard URL
+  const standard = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (standard) return standard[1];
+  throw new Error(
+    "Cannot extract sheet ID. Make sure you are using the editor URL " +
+    "(https://docs.google.com/spreadsheets/d/YOUR_ID/edit), not the published URL."
+  );
 }
 
-export interface NoticeRow {
-  Title: string;
-  Description: string;
-  Date: string;
-  PostedBy: string;
+export function extractSheetName(url: string): string {
+  const match = url.match(/[?&]sheet=([^&]+)/);
+  return match ? decodeURIComponent(match[1]) : "Sheet1";
 }
 
-async function fetchCSV<T>(url: string): Promise<T[]> {
-  if (!url) return [];
-  try {
-    const res = await fetch(url);
-    const text = await res.text();
-    const result = Papa.parse<T>(text, { header: true, skipEmptyLines: true });
-    return result.data;
-  } catch (err) {
-    console.error('Error fetching CSV:', err);
-    return [];
+// ── Base Sheets API request ───────────────────────────────────
+async function sheetsRequest(
+  method: "GET" | "POST" | "PUT",
+  spreadsheetId: string,
+  range: string,
+  body?: object
+) {
+  const base = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+
+  let url: string;
+  if (method === "GET") {
+    url = `${base}/values/${encodeURIComponent(range)}?key=${SHEETS_API_KEY}`;
+  } else if (method === "POST") {
+    url = `${base}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${SHEETS_API_KEY}`;
+  } else {
+    url = `${base}/values/${encodeURIComponent(range)}?valueInputOption=RAW&key=${SHEETS_API_KEY}`;
   }
+
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Sheets API error: ${res.status}`);
+  }
+
+  return res.json();
 }
 
-export const fetchAttendance = (url: string) => fetchCSV<AttendanceRow>(url);
-export const fetchMarks = (url: string) => fetchCSV<MarksRow>(url);
-export const fetchCirculars = () => fetchCSV<CircularRow>(CIRCULARS_SHEET_URL);
-export const fetchNotices = () => fetchCSV<NoticeRow>(NOTICES_SHEET_URL);
+// ── Read all rows from a sheet tab ────────────────────────────
+export async function readSheetRows(
+  spreadsheetId: string,
+  sheetName: string
+): Promise<string[][]> {
+  const data = await sheetsRequest("GET", spreadsheetId, `${sheetName}!A:Z`);
+  return data.values || [];
+}
 
-// Demo data for development
-export const DEMO_ATTENDANCE: AttendanceRow[] = [
-  { RollNo: '23CS001', Name: 'Ravi Kumar', Month: 'January', DaysPresent: '18', TotalDays: '22', Percentage: '81.8', Semester: '3' },
-  { RollNo: '23CS001', Name: 'Ravi Kumar', Month: 'February', DaysPresent: '20', TotalDays: '24', Percentage: '83.3', Semester: '3' },
-  { RollNo: '23CS001', Name: 'Ravi Kumar', Month: 'March', DaysPresent: '15', TotalDays: '21', Percentage: '71.4', Semester: '3' },
-  { RollNo: '23CS002', Name: 'Priya Sharma', Month: 'January', DaysPresent: '21', TotalDays: '22', Percentage: '95.5', Semester: '3' },
-  { RollNo: '23CS002', Name: 'Priya Sharma', Month: 'February', DaysPresent: '22', TotalDays: '24', Percentage: '91.7', Semester: '3' },
-  { RollNo: '23CS003', Name: 'Arun Reddy', Month: 'January', DaysPresent: '12', TotalDays: '22', Percentage: '54.5', Semester: '3' },
-];
+// ════════════════════════════════════════════════════════════
+// ATTENDANCE WRITE-BACK
+// ════════════════════════════════════════════════════════════
 
-export const DEMO_MARKS: MarksRow[] = [
-  { RollNo: '23CS001', Name: 'Ravi Kumar', Subject: 'Physics', Mid1: '28', Mid2: '30', Semester: '3' },
-  { RollNo: '23CS001', Name: 'Ravi Kumar', Subject: 'Chemistry', Mid1: '25', Mid2: '27', Semester: '3' },
-  { RollNo: '23CS001', Name: 'Ravi Kumar', Subject: 'Mathematics', Mid1: '30', Mid2: '29', Semester: '3' },
-  { RollNo: '23CS002', Name: 'Priya Sharma', Subject: 'Physics', Mid1: '27', Mid2: '28', Semester: '3' },
-  { RollNo: '23CS002', Name: 'Priya Sharma', Subject: 'Chemistry', Mid1: '30', Mid2: '30', Semester: '3' },
-  { RollNo: '23CS003', Name: 'Arun Reddy', Subject: 'Physics', Mid1: '18', Mid2: '20', Semester: '3' },
-];
+// Add new attendance row
+export async function addAttendanceRow(
+  spreadsheetId: string,
+  sheetName: string,
+  row: AttendanceRow
+): Promise<void> {
+  await sheetsRequest("POST", spreadsheetId, `${sheetName}!A:G`, {
+    values: [[
+      row.rollNo, row.name, row.month,
+      row.daysPresent, row.totalDays, row.percentage, row.semester
+    ]]
+  });
+}
 
-export const DEMO_CIRCULARS: CircularRow[] = [
-  { Title: 'Semester Exams Schedule Released', Description: 'The semester examination schedule for all groups has been published. Students are advised to check their respective exam dates.', Date: '2026-04-05', PostedBy: 'Admin' },
-  { Title: 'Annual Sports Day', Description: 'Annual sports day will be held on April 15th. All students are encouraged to participate.', Date: '2026-04-02', PostedBy: 'Admin' },
-  { Title: 'Library Timings Extended', Description: 'Library will remain open till 8 PM during exam season starting April 10th.', Date: '2026-03-28', PostedBy: 'Admin' },
-];
+// Update attendance — matched by RollNo + Month + Semester
+export async function updateAttendanceRow(
+  spreadsheetId: string,
+  sheetName: string,
+  rollNo: string,
+  month: string,
+  semester: number,
+  updated: Partial<AttendanceRow>
+): Promise<void> {
+  const rows = await readSheetRows(spreadsheetId, sheetName);
 
-export const DEMO_NOTICES: NoticeRow[] = [
-  { Title: 'Fee Payment Deadline', Description: 'Last date for semester fee payment is April 20th. Late fees will be applicable after the deadline.', Date: '2026-04-06', PostedBy: 'Admin' },
-  { Title: 'Guest Lecture on AI', Description: 'A guest lecture on Artificial Intelligence will be conducted on April 12th in the main auditorium.', Date: '2026-04-03', PostedBy: 'HOD CS' },
-  { Title: 'Attendance Warning', Description: 'Students with attendance below 65% are advised to meet their class incharge immediately.', Date: '2026-03-30', PostedBy: 'Admin' },
-];
+  let targetRow = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      rows[i][0] === rollNo &&
+      rows[i][2] === month &&
+      String(rows[i][6]) === String(semester)
+    ) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+  if (targetRow === -1)
+    throw new Error(`No attendance record found for ${rollNo} / ${month} / Sem ${semester}`);
+
+  const e = rows[targetRow - 1];
+  await sheetsRequest("PUT", spreadsheetId, `${sheetName}!A${targetRow}:G${targetRow}`, {
+    values: [[
+      updated.rollNo      ?? e[0],
+      updated.name        ?? e[1],
+      updated.month       ?? e[2],
+      updated.daysPresent ?? e[3],
+      updated.totalDays   ?? e[4],
+      updated.percentage  ?? e[5],
+      updated.semester    ?? e[6],
+    ]]
+  });
+}
+
+// Delete attendance — clears the row
+export async function deleteAttendanceRow(
+  spreadsheetId: string,
+  sheetName: string,
+  rollNo: string,
+  month: string,
+  semester: number
+): Promise<void> {
+  const rows = await readSheetRows(spreadsheetId, sheetName);
+
+  let targetRow = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      rows[i][0] === rollNo &&
+      rows[i][2] === month &&
+      String(rows[i][6]) === String(semester)
+    ) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+  if (targetRow === -1) throw new Error("Attendance record not found");
+
+  await sheetsRequest("PUT", spreadsheetId, `${sheetName}!A${targetRow}:G${targetRow}`, {
+    values: [["", "", "", "", "", "", ""]]
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// MARKS WRITE-BACK
+// ════════════════════════════════════════════════════════════
+
+// Add new marks row
+export async function addMarksRow(
+  spreadsheetId: string,
+  sheetName: string,
+  row: MarksRow
+): Promise<void> {
+  await sheetsRequest("POST", spreadsheetId, `${sheetName}!A:F`, {
+    values: [[
+      row.rollNo, row.name, row.subject,
+      row.mid1, row.mid2, row.semester
+    ]]
+  });
+}
+
+// Update marks — matched by RollNo + Subject + Semester
+export async function updateMarksRow(
+  spreadsheetId: string,
+  sheetName: string,
+  rollNo: string,
+  subject: string,
+  semester: number,
+  updated: Partial<MarksRow>
+): Promise<void> {
+  const rows = await readSheetRows(spreadsheetId, sheetName);
+
+  let targetRow = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      rows[i][0] === rollNo &&
+      rows[i][2] === subject &&
+      String(rows[i][5]) === String(semester)
+    ) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+  if (targetRow === -1)
+    throw new Error(`No marks record found for ${rollNo} / ${subject} / Sem ${semester}`);
+
+  const e = rows[targetRow - 1];
+  await sheetsRequest("PUT", spreadsheetId, `${sheetName}!A${targetRow}:F${targetRow}`, {
+    values: [[
+      updated.rollNo   ?? e[0],
+      updated.name     ?? e[1],
+      updated.subject  ?? e[2],
+      updated.mid1     ?? e[3],
+      updated.mid2     ?? e[4],
+      updated.semester ?? e[5],
+    ]]
+  });
+}
+
+// Delete marks row — clears the row
+export async function deleteMarksRow(
+  spreadsheetId: string,
+  sheetName: string,
+  rollNo: string,
+  subject: string,
+  semester: number
+): Promise<void> {
+  const rows = await readSheetRows(spreadsheetId, sheetName);
+
+  let targetRow = -1;
+  for (let i = 1; i < rows.length; i++) {
+    if (
+      rows[i][0] === rollNo &&
+      rows[i][2] === subject &&
+      String(rows[i][5]) === String(semester)
+    ) {
+      targetRow = i + 1;
+      break;
+    }
+  }
+  if (targetRow === -1) throw new Error("Marks record not found");
+
+  await sheetsRequest("PUT", spreadsheetId, `${sheetName}!A${targetRow}:F${targetRow}`, {
+    values: [["", "", "", "", "", ""]]
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// BULK CSV UPLOAD
+// CSV headers must be: RollNo, Name, Subject, Mid1, Mid2, Semester
+// ════════════════════════════════════════════════════════════
+export async function bulkUploadMarksFromCSV(
+  spreadsheetId: string,
+  sheetName: string,
+  file: File
+): Promise<{ success: number; errors: string[] }> {
+  const Papa = (await import("papaparse")).default;
+
+  return new Promise((resolve) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        let success = 0;
+        const errors: string[] = [];
+
+        for (const row of results.data as any[]) {
+          try {
+            await addMarksRow(spreadsheetId, sheetName, {
+              rollNo:   String(row.RollNo   || row.rollNo   || ""),
+              name:     String(row.Name     || row.name     || ""),
+              subject:  String(row.Subject  || row.subject  || ""),
+              mid1:     Number(row.Mid1     || row.mid1     || 0),
+              mid2:     Number(row.Mid2     || row.mid2     || 0),
+              semester: Number(row.Semester || row.semester || 1),
+            });
+            success++;
+          } catch (e: any) {
+            errors.push(`${row.RollNo}: ${e.message}`);
+          }
+        }
+        resolve({ success, errors });
+      },
+    });
+  });
+}
+
+// ── Helper: build sheet name from group + section ─────────────
+// e.g. buildSheetTabName("BCA", "A", "Attendance") → "BCA-A-Attendance"
+export function buildSheetTabName(
+  group: string,
+  section: string,
+  type: "Attendance" | "Marks"
+): string {
+  return `${group}-${section}-${type}`;
+}
