@@ -1,2 +1,2 @@
-import AttendancePage from '@/components/AttendancePage';
-export default AttendancePage;
+import AttendancePage from "@/components/AttendancePage";
+export default function Attendance() { return <AttendancePage />; }

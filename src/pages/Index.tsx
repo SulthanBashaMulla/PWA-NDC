@@ -1,21 +1,2 @@
-import { useAuth } from '@/context/AuthContext';
-import LoginPage from '@/components/LoginPage';
-import StudentDashboard from '@/components/StudentDashboard';
-import LecturerDashboard from '@/components/LecturerDashboard';
-import AdminDashboard from '@/components/AdminDashboard';
-
-const DashboardPage = () => {
-  const { user } = useAuth();
-  if (!user) return <LoginPage />;
-  if (user.role === 'student') return <StudentDashboard />;
-  if (user.role === 'lecturer') return <LecturerDashboard />;
-  return <AdminDashboard />;
-};
-
-const Index = () => {
-  const { user } = useAuth();
-  if (!user) return <LoginPage />;
-  return <DashboardPage />;
-};
-
-export default Index;
+import LoginPage from "@/components/LoginPage";
+export default function Index() { return <LoginPage />; }

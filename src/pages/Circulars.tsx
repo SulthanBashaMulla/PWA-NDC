@@ -1,2 +1,2 @@
-import CircularsPage from '@/components/CircularsPage';
-export default CircularsPage;
+import CircularsPage from "@/components/CircularsPage";
+export default function Circulars() { return <CircularsPage />; }

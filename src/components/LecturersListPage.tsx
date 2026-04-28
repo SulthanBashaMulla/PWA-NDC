@@ -1,212 +1,153 @@
-// src/components/LecturersListPage.tsx
 import { useState, useEffect } from "react";
-import { getAllLecturers, LecturerProfile } from "../firebase/firestore";
+import { getAllLecturers } from "@/firebase/firestore";
+import type { LecturerProfile } from "@/firebase/firestore";
+import GlassCard from "./GlassCard";
+import AnimatedBackground from "./AnimatedBackground";
+import Navbar from "./Navbar";
+import { Users, Search, RefreshCw } from "lucide-react";
 
 export default function LecturersListPage() {
-  const [lecturers, setLecturers]       = useState<LecturerProfile[]>([]);
-  const [filtered, setFiltered]         = useState<LecturerProfile[]>([]);
-  const [department, setDepartment]     = useState("All");
-  const [search, setSearch]             = useState("");
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState("");
-
-  // All unique departments for filter dropdown
+  const [lecturers, setLecturers] = useState < LecturerProfile[] > ([]);
+  const [filtered, setFiltered] = useState < LecturerProfile[] > ([]);
+  const [department, setDepartment] = useState("All");
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  
+  const txt = { color: "hsl(260 40% 20%)" };
+  const muted = { color: "hsl(260 20% 50%)" };
+  
   const departments = [
     "All",
-    ...Array.from(new Set(lecturers.map((l) => l.department).filter(Boolean)))
+    ...Array.from(new Set(lecturers.map(l => l.department).filter(Boolean))).sort(),
   ];
-
-  useEffect(() => {
+  
+  const load = () => {
+    setLoading(true);
+    setError("");
     getAllLecturers()
-      .then((data) => {
-        setLecturers(data);
-        setFiltered(data);
-      })
+      .then(data => { setLecturers(data);
+        setFiltered(data); })
       .catch(() => setError("Failed to load lecturers. Check your connection."))
       .finally(() => setLoading(false));
-  }, []);
-
-  // Filter whenever dept or search changes
-  useEffect(() => {
-    let result = lecturers;
-    if (department !== "All") result = result.filter((l) => l.department === department);
-    if (search.trim())
-      result = result.filter(
-        (l) =>
-          l.name.toLowerCase().includes(search.toLowerCase()) ||
-          l.lecturerId.toLowerCase().includes(search.toLowerCase())
-      );
-    setFiltered(result);
-  }, [department, search, lecturers]);
-
-  const designationColor = (d: string) => {
-    if (d === "HOD")       return { bg: "rgba(249,115,22,0.15)", color: "#f97316" };
-    if (d === "Principal") return { bg: "rgba(139,92,246,0.15)", color: "#8b5cf6" };
-    return                        { bg: "rgba(59,130,246,0.15)",  color: "#3b82f6" };
   };
-
+  
+  useEffect(load, []);
+  
+  useEffect(() => {
+    let r = lecturers;
+    if (department !== "All") r = r.filter(l => l.department === department);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      r = r.filter(l => l.name.toLowerCase().includes(q) || l.lecturerId.toLowerCase().includes(q));
+    }
+    setFiltered(r);
+  }, [department, search, lecturers]);
+  
+  const designationBadge = (d: string) => {
+    if (d === "HOD") return "badge-orange";
+    if (d === "Principal") return "badge-purple";
+    return "badge-blue";
+  };
+  
   return (
-    <div style={{ padding: "16px", minHeight: "100vh" }}>
+    <div className="relative min-h-screen">
+      <AnimatedBackground />
+      <div className="relative z-10">
+        <Navbar />
+        <div className="mx-auto max-w-3xl p-4 md:p-6">
 
-      {/* Header */}
-      <div style={{
-        background: "rgba(255,255,255,0.6)",
-        backdropFilter: "blur(16px)",
-        borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0.8)",
-        padding: "16px 20px",
-        marginBottom: 16,
-        boxShadow: "0 4px 16px rgba(59,130,246,0.1)"
-      }}>
-        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: "#1e293b" }}>
-          👨‍🏫 Lecturers
-        </h2>
-        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#64748b" }}>
-          {filtered.length} of {lecturers.length} lecturers · Read-only view
-        </p>
-      </div>
+          {/* Header */}
+          <div className="mb-5 flex items-center justify-between animate-fade-in-up">
+            <div>
+              <h1 className="text-2xl font-bold" style={{ fontFamily: "Outfit, sans-serif", ...txt }}>Lecturers</h1>
+              <p className="text-sm" style={muted}>{filtered.length} of {lecturers.length} staff members</p>
+            </div>
+            <button onClick={load} disabled={loading} className="rounded-xl p-2.5 transition-all hover:bg-white/30 active:scale-95" style={{ color: "hsl(265 50% 55%)" }}>
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            </button>
+          </div>
 
-      {/* Filters */}
-      <div style={{
-        background: "rgba(255,255,255,0.6)",
-        backdropFilter: "blur(16px)",
-        borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0.8)",
-        padding: 16,
-        marginBottom: 16,
-        display: "flex",
-        gap: 10,
-        flexWrap: "wrap"
-      }}>
-        {/* Search */}
-        <input
-          type="text"
-          placeholder="Search by name or ID..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            flex: 1, minWidth: 160,
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1.5px solid rgba(203,213,225,0.7)",
-            background: "rgba(248,250,252,0.9)",
-            fontSize: 13.5,
-            outline: "none",
-            color: "#1e293b"
-          }}
-        />
-
-        {/* Department filter */}
-        <select
-          value={department}
-          onChange={(e) => setDepartment(e.target.value)}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            border: "1.5px solid rgba(203,213,225,0.7)",
-            background: "rgba(248,250,252,0.9)",
-            fontSize: 13.5,
-            color: "#1e293b",
-            outline: "none",
-            cursor: "pointer"
-          }}
-        >
-          {departments.map((d) => (
-            <option key={d} value={d}>{d === "All" ? "All Departments" : d}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* States */}
-      {loading && (
-        <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>
-          Loading lecturers...
-        </div>
-      )}
-      {error && (
-        <div style={{
-          background: "rgba(239,68,68,0.1)", borderRadius: 12,
-          padding: 14, color: "#dc2626", fontSize: 14, marginBottom: 12
-        }}>{error}</div>
-      )}
-
-      {/* Lecturer Cards */}
-      {!loading && !error && filtered.length === 0 && (
-        <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>
-          No lecturers found.
-        </div>
-      )}
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {filtered.map((lec) => {
-          const dc = designationColor(lec.designation);
-          return (
-            <div key={lec.uid} style={{
-              background: "rgba(255,255,255,0.65)",
-              backdropFilter: "blur(16px)",
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.8)",
-              padding: "14px 16px",
-              boxShadow: "0 2px 8px rgba(59,130,246,0.07)"
-            }}>
-              {/* Top row */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: "#1e293b" }}>
-                    {lec.name}
-                  </div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
-                    ID: {lec.lecturerId}
-                  </div>
-                </div>
-                <span style={{
-                  background: dc.bg, color: dc.color,
-                  borderRadius: 20, padding: "3px 10px",
-                  fontSize: 11.5, fontWeight: 700
-                }}>
-                  {lec.designation}
-                </span>
-              </div>
-
-              {/* Details row */}
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <Tag icon="🏫" text={lec.department} />
-                {lec.isIncharge && (
-                  <Tag
-                    icon="📋"
-                    text={`Incharge: ${lec.group} - ${lec.section}`}
-                    highlight
-                  />
-                )}
-                <Tag
-                  icon={lec.status === "active" ? "✅" : "🚫"}
-                  text={lec.status}
-                  color={lec.status === "active" ? "#10b981" : "#ef4444"}
+          {/* Filters */}
+          <GlassCard strong className="mb-5 card-stagger-1">
+            <div className="flex flex-wrap gap-3 items-center">
+              <div className="relative flex-1 min-w-[160px]">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "hsl(260 20% 55%)" }} />
+                <input
+                  type="text"
+                  placeholder="Search by name or ID…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="glass-input"
+                  style={{ paddingLeft: "34px" }}
                 />
               </div>
+              <select
+                value={department}
+                onChange={e => setDepartment(e.target.value)}
+                className="glass-input"
+                style={{ width: "auto", padding: "7px 12px", fontSize: "13px" }}
+              >
+                {departments.map(d => <option key={d} value={d}>{d === "All" ? "All Departments" : d}</option>)}
+              </select>
             </div>
-          );
-        })}
+          </GlassCard>
+
+          {/* Error */}
+          {error && (
+            <div className="mb-4 rounded-xl px-4 py-3 text-sm font-medium"
+              style={{ background: "rgba(239,68,68,0.12)", color: "hsl(0 72% 48%)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              {error}
+            </div>
+          )}
+
+          {/* Loading */}
+          {loading && (
+            <div className="flex flex-col gap-3">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="rounded-[20px] h-20 animate-pulse"
+                  style={{ background: "rgba(255,255,255,0.2)", animationDelay: `${i * 0.08}s` }} />
+              ))}
+            </div>
+          )}
+
+          {/* Empty */}
+          {!loading && filtered.length === 0 && !error && (
+            <GlassCard className="text-center py-12">
+              <Users size={36} className="mx-auto mb-3 opacity-40" style={{ color: "hsl(265 50% 55%)" }} />
+              <p className="font-semibold" style={{ fontFamily: "Outfit, sans-serif", ...txt }}>No lecturers found</p>
+              <p className="text-sm mt-1" style={muted}>Try a different search or filter.</p>
+            </GlassCard>
+          )}
+
+          {/* Cards */}
+          <div className="space-y-3">
+            {filtered.map((lec, i) => (
+              <GlassCard key={lec.uid} className={`card-stagger-${Math.min(i + 1, 6)}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <p className="font-bold text-sm" style={{ fontFamily: "Outfit, sans-serif", ...txt }}>{lec.name}</p>
+                      <span className={`badge ${designationBadge(lec.designation)}`}>{lec.designation}</span>
+                    </div>
+                    <p className="text-xs font-mono mb-2" style={{ color: "hsl(265 40% 52%)" }}>ID: {lec.lecturerId}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="badge badge-gray">🏫 {lec.department}</span>
+                      {lec.isIncharge && (
+                        <span className="badge badge-blue">📋 Incharge: {lec.group} – {lec.section}</span>
+                      )}
+                      <span className={`badge ${lec.status === "active" ? "badge-green" : "badge-red"}`}>
+                        {lec.status === "active" ? "✅" : "🚫"} {lec.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+
+        </div>
       </div>
     </div>
-  );
-}
-
-// Small tag component
-function Tag({
-  icon, text, highlight = false, color
-}: {
-  icon: string; text: string; highlight?: boolean; color?: string
-}) {
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      background: highlight ? "rgba(59,130,246,0.1)" : "rgba(241,245,249,0.9)",
-      color: color || (highlight ? "#3b82f6" : "#475569"),
-      borderRadius: 8, padding: "3px 8px",
-      fontSize: 12, fontWeight: highlight ? 700 : 500
-    }}>
-      {icon} {text}
-    </span>
   );
 }
