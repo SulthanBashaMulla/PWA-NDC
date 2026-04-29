@@ -1,38 +1,25 @@
 // src/firebase/config.ts
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// ── Validate required env vars at startup ────────────────────
-const required = [
-  "VITE_FIREBASE_API_KEY",
-  "VITE_FIREBASE_AUTH_DOMAIN",
-  "VITE_FIREBASE_PROJECT_ID",
-  "VITE_FIREBASE_APP_ID",
-] as
-const;
-
-for (const key of required) {
-  if (!import.meta.env[key]) {
-    throw new Error(
-      `Missing environment variable: ${key}. ` +
-      "Create a .env.local file — see .env.local.example"
-    );
-  }
-}
-
+// ── Firebase config ───────────────────────────────────────────
+// Using hardcoded values so Vercel never crashes on missing env vars.
+// These are safe to expose in frontend code (protected by Firebase
+// Security Rules in your console).
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey:            "AIzaSyAfJIPvOLuGM1j8ET35fPtLQd2PRMPbd1o",
+  authDomain:        "ndc-student-managment.firebaseapp.com",
+  projectId:         "ndc-student-managment",
+  storageBucket:     "ndc-student-managment.firebasestorage.app",
+  messagingSenderId: "563452237750",
+  appId:             "1:563452237750:web:796ba1af00bb0882c3d317",
+  measurementId:     "G-PJ7618ZEYE",
 };
 
-const app = initializeApp(firebaseConfig);
+// Prevent duplicate app init (hot-reload safe)
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db   = getFirestore(app);
 export default app;
