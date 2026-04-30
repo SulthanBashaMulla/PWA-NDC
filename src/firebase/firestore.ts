@@ -2,67 +2,63 @@
 import {
   doc,
   getDoc,
-  collection,
   getDocs,
-  query,
-  where,
-  orderBy,
   addDoc,
-  updateDoc,
   deleteDoc,
+  collection,
+  query,
+  orderBy,
   serverTimestamp,
-  Timestamp
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "./config";
 
-// ── Types ────────────────────────────────────────────────────
-
-export interface StudentProfile {
-  uid:        string;
-  email:      string;
-  rollNo:     string;
-  name:       string;
-  role:       "student";
-  group:      string;
-  section:    string;
-  semester:   number;
-  phone:      string;
-  status:     "active" | "inactive";
-}
-
-export interface LecturerProfile {
-  uid:          string;
-  email:        string;
-  lecturerId:   string;
-  name:         string;
-  role:         "lecturer";
-  department:   string;
-  designation:  string;
-  isIncharge:   boolean;
-  group:        string | null;
-  section:      string | null;
-  status:       "active" | "inactive";
-}
-
-export interface AdminProfile {
+// ═══════════════════════════════════════════════════════════════
+// TYPES — match Apps Script field names exactly
+// ═══════════════════════════════════════════════════════════════
+export interface UserProfile {
   uid:         string;
-  email:       string;
-  adminId:     string;
+  role:        "student" | "lecturer" | "admin";
   name:        string;
-  role:        "admin";
-  designation: string;
-  phone:       string;
-  status:      "active" | "inactive";
+  email:       string;
+  status:      string;
+  // Student fields
+  rollNo?:     string;
+  group?:      string;
+  section?:    string;
+  semester?:   number;
+  phone?:      string;
+  // Lecturer fields
+  lecturerId?:  string;
+  department?:  string;
+  designation?: string;
+  isIncharge?:  boolean;
+  // Admin fields
+  adminId?:     string;
 }
 
-export type UserProfile = StudentProfile | LecturerProfile | AdminProfile;
+export interface StudentProfile extends UserProfile {
+  role:     "student";
+  rollNo:   string;
+  group:    string;
+  section:  string;
+  semester: number;
+}
+
+export interface LecturerProfile extends UserProfile {
+  role:        "lecturer";
+  lecturerId:  string;
+  department:  string;
+  designation: string;
+  isIncharge:  boolean;
+}
 
 export interface Notice {
-  id:        string;
-  title:     string;
-  content:   string;
-  postedBy:  string;
-  postedAt:  Timestamp;
+  id:       string;
+  title:    string;
+  content:  string;
+  postedBy: string;
+  postedAt: Timestamp | null;
 }
 
 export interface Circular {
@@ -70,99 +66,100 @@ export interface Circular {
   title:       string;
   description: string;
   author:      string;
-  date:        Timestamp;
+  date:        Timestamp | null;
 }
 
-// ── Get user profile from Firestore ─────────────────────────
-export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+// ═══════════════════════════════════════════════════════════════
+// USER PROFILE
+// ═══════════════════════════════════════════════════════════════
+export async function getUserProfile(uid: string): Promise<UserProfile> {
   const snap = await getDoc(doc(db, "users", uid));
-  if (!snap.exists()) return null;
+  if (!snap.exists()) {
+    throw new Error("User profile not found. Please contact admin.");
+  }
   return { uid, ...snap.data() } as UserProfile;
 }
 
-// ── Notifications ────────────────────────────────────────────
-export async function getNotifications(): Promise<Notice[]> {
-  const q = query(
-    collection(db, "notifications"),
-    orderBy("postedAt", "desc")
+export async function getAllStudents(): Promise<StudentProfile[]> {
+  const snap = await getDocs(
+    query(collection(db, "users"), orderBy("name"))
   );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Notice));
+  return snap.docs
+    .map(d => ({ uid: d.id, ...d.data() } as UserProfile))
+    .filter(u => u.role === "student") as StudentProfile[];
+}
+
+export async function getAllLecturers(): Promise<LecturerProfile[]> {
+  const snap = await getDocs(
+    query(collection(db, "users"), orderBy("name"))
+  );
+  return snap.docs
+    .map(d => ({ uid: d.id, ...d.data() } as UserProfile))
+    .filter(u => u.role === "lecturer") as LecturerProfile[];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════
+export async function getNotifications(): Promise<Notice[]> {
+  const snap = await getDocs(
+    query(collection(db, "notifications"), orderBy("postedAt", "desc"))
+  );
+  return snap.docs.map(d => ({
+    id:       d.id,
+    title:    d.data().title    || "",
+    content:  d.data().content  || "",
+    postedBy: d.data().postedBy || "",
+    postedAt: d.data().postedAt || null,
+  }));
 }
 
 export async function addNotification(
-  title: string,
-  content: string,
+  title:    string,
+  content:  string,
   postedBy: string
-) {
+): Promise<void> {
   await addDoc(collection(db, "notifications"), {
-    title, content, postedBy,
-    postedAt: serverTimestamp()
+    title,
+    content,
+    postedBy,
+    postedAt: serverTimestamp(),
   });
 }
 
-export async function deleteNotification(id: string) {
+export async function deleteNotification(id: string): Promise<void> {
   await deleteDoc(doc(db, "notifications", id));
 }
 
-// ── Circulars ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// CIRCULARS
+// ═══════════════════════════════════════════════════════════════
 export async function getCirculars(): Promise<Circular[]> {
-  const q = query(
-    collection(db, "circulars"),
-    orderBy("date", "desc")
+  const snap = await getDocs(
+    query(collection(db, "circulars"), orderBy("date", "desc"))
   );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Circular));
+  return snap.docs.map(d => ({
+    id:          d.id,
+    title:       d.data().title       || "",
+    description: d.data().description || "",
+    author:      d.data().author      || "",
+    date:        d.data().date        || null,
+  }));
 }
 
 export async function addCircular(
-  title: string,
+  title:       string,
   description: string,
-  author: string
-) {
+  author:      string
+): Promise<void> {
   await addDoc(collection(db, "circulars"), {
-    title, description, author,
-    date: serverTimestamp()
+    title,
+    description,
+    author,
+    date: serverTimestamp(),
   });
 }
 
-export async function deleteCircular(id: string) {
+export async function deleteCircular(id: string): Promise<void> {
   await deleteDoc(doc(db, "circulars", id));
-}
-
-// ── Admin: get all lecturers ─────────────────────────────────
-export async function getAllLecturers(): Promise<LecturerProfile[]> {
-  const q = query(
-    collection(db, "users"),
-    where("role", "==", "lecturer")
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ uid: d.id, ...d.data() } as LecturerProfile));
-}
-
-// ── Admin: get all students (optionally filter group+section) ─
-export async function getAllStudents(
-  group?: string,
-  section?: string
-): Promise<StudentProfile[]> {
-  let q = query(collection(db, "users"), where("role", "==", "student"));
-  if (group)   q = query(q, where("group",   "==", group));
-  if (section) q = query(q, where("section", "==", section));
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ uid: d.id, ...d.data() } as StudentProfile));
-}
-
-// ── Lecturer: get students in their section only ─────────────
-export async function getSectionStudents(
-  group: string,
-  section: string
-): Promise<StudentProfile[]> {
-  const q = query(
-    collection(db, "users"),
-    where("role",    "==", "student"),
-    where("group",   "==", group),
-    where("section", "==", section)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map(d => ({ uid: d.id, ...d.data() } as StudentProfile));
 }
