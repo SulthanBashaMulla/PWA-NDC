@@ -26,16 +26,15 @@ const Navbar = () => {
               <ArrowLeft size={20} />
             </button>
           )}
-          <img
-            src={COLLEGE_LOGO_URL}
-            alt="NDC"
-            className="h-9 w-9 rounded-full object-cover"
-            style={{ border: "2px solid rgba(232,96,28,0.6)", boxShadow: "0 0 0 1px rgba(255,255,255,0.1)" }}
-            onError={(e) => {
-              const t = e.target as HTMLImageElement;
-              t.style.display = "none";
-            }}
-          />
+        <img
+  src={COLLEGE_LOGO_URL}
+  alt="NDC"
+  className="h-9 w-9"
+  onError={(e) => {
+    const t = e.target as HTMLImageElement;
+    t.style.display = "none";
+  }}
+/>
           <div>
             <p className="text-sm font-bold leading-tight" style={{ fontFamily: "Sora, sans-serif", color: "white" }}>
               National Degree College
