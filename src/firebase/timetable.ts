@@ -1,6 +1,11 @@
 // src/firebase/timetable.ts
 // ═══════════════════════════════════════════════════════════════
-// Timetable persistence — Firestore (UPDATED WITH SESSION LOGIC)
+// Timetable persistence — Firestore (FINAL CLEAN VERSION)
+// Includes:
+// ✔ Session support (Fore Noon / After Noon)
+// ✔ Realtime (day + week)
+// ✔ Admin write helpers
+// ✔ Lecturer aggregation
 // ═══════════════════════════════════════════════════════════════
 
 import {
@@ -16,7 +21,7 @@ import {
 } from "firebase/firestore";
 import { db } from "./config";
 
-// ── Types ────────────────────────────────────────────────────
+// ── TYPES ─────────────────────────────────────────────────────
 export type Day =
   | "Monday" | "Tuesday" | "Wednesday"
   | "Thursday" | "Friday" | "Saturday";
@@ -27,8 +32,8 @@ export const DAYS: Day[] = [
 
 export type Session = "foreNoon" | "afterNoon";
 
-export const SESSIONS: { value: Session; label: string }[] = [
-  { value: "foreNoon",  label: "Fore Noon"  },
+export const SESSIONS = [
+  { value: "foreNoon", label: "Fore Noon" },
   { value: "afterNoon", label: "After Noon" },
 ];
 
@@ -52,7 +57,7 @@ export interface DayTimetable {
   updatedBy: string;
 }
 
-// ── Doc path helpers ─────────────────────────────────────────
+// ── PATH HELPERS ──────────────────────────────────────────────
 export function classKey(group: string, section: string): string {
   return `${group.trim().replace(/\s+/g, "_")}_${section.trim()}`;
 }
@@ -69,28 +74,28 @@ function daysColRef(group: string, section: string) {
   return collection(db, "timetables", classKey(group, section), "days");
 }
 
-// ── 🆕 SESSION HELPER (IMPORTANT) ─────────────────────────────
-export function filterBySession(
-  day: DayTimetable,
-  session: Session
-): TimetableSlot[] {
+// ── SESSION HELPER ────────────────────────────────────────────
+export function filterBySession(day: DayTimetable, session: Session) {
   return session === "foreNoon" ? day.foreNoon : day.afterNoon;
 }
 
-// ── Reads ────────────────────────────────────────────────────
+// ── READS ─────────────────────────────────────────────────────
 export async function getDayTimetable(
   group: string,
   section: string,
   day: Day,
 ): Promise<DayTimetable> {
   const snap = await getDoc(dayDocRef(group, section, day));
+
   if (!snap.exists()) {
     return { day, foreNoon: [], afterNoon: [], updatedAt: null, updatedBy: "" };
   }
+
   const data = snap.data() as Partial<DayTimetable>;
+
   return {
     day,
-    foreNoon:  data.foreNoon  ?? [],
+    foreNoon: data.foreNoon ?? [],
     afterNoon: data.afterNoon ?? [],
     updatedAt: data.updatedAt ?? null,
     updatedBy: data.updatedBy ?? "",
@@ -113,6 +118,7 @@ export async function getWeekTimetable(
     if (!DAYS.includes(id)) return;
 
     const data = s.data() as Partial<DayTimetable>;
+
     out[id] = {
       day: id,
       foreNoon: data.foreNoon ?? [],
@@ -125,7 +131,31 @@ export async function getWeekTimetable(
   return out;
 }
 
-// ── Realtime subscriptions ───────────────────────────────────
+// ── REALTIME ──────────────────────────────────────────────────
+export function subscribeToDay(
+  group: string,
+  section: string,
+  day: Day,
+  cb: (data: DayTimetable) => void,
+): Unsubscribe {
+  return onSnapshot(dayDocRef(group, section, day), snap => {
+    if (!snap.exists()) {
+      cb({ day, foreNoon: [], afterNoon: [], updatedAt: null, updatedBy: "" });
+      return;
+    }
+
+    const data = snap.data() as Partial<DayTimetable>;
+
+    cb({
+      day,
+      foreNoon: data.foreNoon ?? [],
+      afterNoon: data.afterNoon ?? [],
+      updatedAt: data.updatedAt ?? null,
+      updatedBy: data.updatedBy ?? "",
+    });
+  });
+}
+
 export function subscribeToWeek(
   group: string,
   section: string,
@@ -143,6 +173,7 @@ export function subscribeToWeek(
       if (!DAYS.includes(id)) return;
 
       const data = s.data() as Partial<DayTimetable>;
+
       out[id] = {
         day: id,
         foreNoon: data.foreNoon ?? [],
@@ -156,22 +187,7 @@ export function subscribeToWeek(
   });
 }
 
-// ── 🆕 VALIDATION FUNCTION ────────────────────────────────────
-export function validateSessionData(
-  session: Session,
-  foreNoon: TimetableSlot[],
-  afterNoon: TimetableSlot[]
-): void {
-  if (session === "foreNoon" && afterNoon.length > 0) {
-    throw new Error("After Noon must be empty for Fore Noon groups");
-  }
-
-  if (session === "afterNoon" && foreNoon.length > 0) {
-    throw new Error("Fore Noon must be empty for After Noon groups");
-  }
-}
-
-// ── Writes ───────────────────────────────────────────────────
+// ── WRITE (ADMIN) ─────────────────────────────────────────────
 export async function saveDayBoth(
   group: string,
   section: string,
@@ -199,7 +215,7 @@ export async function saveDayBoth(
   );
 }
 
-// ── Lecturer-centric reads ───────────────────────────────────
+// ── LECTURER VIEW ─────────────────────────────────────────────
 export async function getLecturerWeek(
   classes: { group: string; section: string }[],
   lecturerUid: string,
@@ -223,7 +239,7 @@ export async function getLecturerWeek(
   return out;
 }
 
-// ── Slot id helper ────────────────────────────────────────────
+// ── ID HELPER ────────────────────────────────────────────────
 export function newSlotId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
