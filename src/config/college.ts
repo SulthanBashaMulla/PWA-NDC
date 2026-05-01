@@ -11,7 +11,7 @@ export const COLLEGE_NAME     = "National Degree College";
 export const COLLEGE_SHORT    = "NDC";
 export const COLLEGE_PLACE    = "Nandyal";
 export const COLLEGE_WEBSITE  = "https://ndcndl.org";
-export const COLLEGE_LOGO_URL = "https://i.postimg.cc/VknRXB1B/1000340942-removebg-preview.png";
+export const COLLEGE_LOGO_URL = "https://i.postimg.cc/pXbTGLXB/ndc-logo.png";
 
 // ── Semesters & Months ───────────────────────────────────────
 export const SEMESTERS = [1, 2, 3, 4, 5, 6];
