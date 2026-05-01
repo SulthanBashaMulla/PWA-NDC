@@ -42,19 +42,15 @@ const LoginPage = () => {
         {/* Top section — navy */}
         <div className="login-card-top">
           <div className="flex flex-col items-center">
-            <div className="h-20 w-20 rounded-full flex items-center justify-center mb-3"
-              style={{ background: "rgba(255,255,255,0.12)", border: "3px solid rgba(232,96,28,0.7)", boxShadow: "0 0 0 4px rgba(255,255,255,0.06)" }}>
-              <img
-                src={COLLEGE_LOGO_URL}
-                alt="NDC"
-                className="h-14 w-14 rounded-full object-cover"
-                onError={(e) => {
-                  const t = e.target as HTMLImageElement;
-                  t.style.display = "none";
-                  t.parentElement!.innerHTML = '<span style="font-size:32px">🎓</span>';
-                }}
-              />
-            </div>
+            <img
+              src={COLLEGE_LOGO_URL}
+              alt="NDC"
+              className="h-20 w-20 object-contain mb-3"
+              onError={(e) => {
+                const t = e.target as HTMLImageElement;
+                t.style.display = "none";
+              }}
+            />
             <h1 className="text-lg font-bold text-white leading-tight text-center"
               style={{ fontFamily: "Sora, sans-serif" }}>
               National Degree College
