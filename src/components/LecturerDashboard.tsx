@@ -1,10 +1,9 @@
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import GlassCard from "./GlassCard";
-import AnimatedBackground from "./AnimatedBackground";
 import Navbar from "./Navbar";
+import AnimatedBackground from "./AnimatedBackground";
 import { COLLEGE_WEBSITE } from "@/config/college";
-import { Calendar, BookOpen, Bell, FileText, Globe, User, MoreHorizontal, GraduationCap } from "lucide-react";
+import { Bell, FileText, Globe, Calendar, BookOpen, Users, GraduationCap, ChevronRight, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getNotifications, getCirculars } from "@/firebase/firestore";
 import type { Notice, Circular } from "@/firebase/firestore";
@@ -15,96 +14,128 @@ const LecturerDashboard = () => {
   const [notices,   setNotices]   = useState<Notice[]>([]);
   const [circulars, setCirculars] = useState<Circular[]>([]);
 
+  const isIncharge  = (user as any)?.isIncharge;
+  const group       = (user as any)?.group       || "";
+  const section     = (user as any)?.section     || "";
+  const department  = (user as any)?.department  || "";
+  const designation = (user as any)?.designation || "Lecturer";
+
+  const now   = new Date();
+  const hour  = now.getHours();
+  const greet = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
+
   useEffect(() => {
     getNotifications().then(setNotices).catch(() => {});
     getCirculars().then(setCirculars).catch(() => {});
   }, []);
 
-  const latestNotice   = notices[0];
-  const latestCircular = circulars[0];
-  const isIncharge     = (user as any)?.isIncharge;
-  const group          = (user as any)?.group   || "";
-  const section        = (user as any)?.section || "";
-  const department     = (user as any)?.department || "";
-  const designation    = (user as any)?.designation || "Lecturer";
-  const inchargeLabel  = isIncharge ? `Incharge: ${group} — Sec ${section}` : "General Faculty";
-
   const panels = [
-    { icon: <Bell          size={22} />, label: "Notifications", sub: latestNotice?.title   || "No new",          color: "text-violet-600",  bg: "bg-violet-400/20",  onClick: () => navigate("/notifications"),            stagger: "card-stagger-1" },
-    { icon: <FileText      size={22} />, label: "Circulars",     sub: latestCircular?.title || "No new",          color: "text-fuchsia-600", bg: "bg-fuchsia-400/20", onClick: () => navigate("/circulars"),                 stagger: "card-stagger-2" },
-    { icon: <Calendar      size={22} />, label: "Attendance",    sub: isIncharge ? "Manage" : "View",             color: "text-blue-600",    bg: "bg-blue-400/20",    onClick: () => navigate("/attendance"),                stagger: "card-stagger-3" },
-    { icon: <BookOpen      size={22} />, label: "Marks",         sub: isIncharge ? "Manage" : "View",             color: "text-pink-600",    bg: "bg-pink-400/20",    onClick: () => navigate("/marks"),                     stagger: "card-stagger-4" },
-    { icon: <Globe         size={22} />, label: "Website",       sub: "College portal",                           color: "text-emerald-600", bg: "bg-emerald-400/20", onClick: () => window.open(COLLEGE_WEBSITE, "_blank"), stagger: "card-stagger-5" },
-    { icon: <GraduationCap size={22} />, label: "Students",      sub: "Class list",                               color: "text-amber-600",   bg: "bg-amber-400/20",   onClick: () => navigate("/admin/students"),            stagger: "card-stagger-6" },
-    { icon: <User          size={22} />, label: "Profile",       sub: "My details",                               color: "text-indigo-600",  bg: "bg-indigo-400/20",  onClick: () => {},                                     stagger: "card-stagger-1" },
-    { icon: <MoreHorizontal size={22}/>, label: "More",          sub: "Settings",                                 color: "text-slate-500",   bg: "bg-slate-400/20",   onClick: () => {},                                     stagger: "card-stagger-2" },
+    { icon:<Bell size={20}/>,          label:"Notifications", value:`${notices.length}`,   bg:"rgba(15,45,94,0.1)",   color:"var(--navy)",   onClick:()=>navigate("/notifications"),            stagger:"stagger-1" },
+    { icon:<FileText size={20}/>,       label:"Circulars",     value:`${circulars.length}`, bg:"rgba(232,96,28,0.1)", color:"var(--orange)", onClick:()=>navigate("/circulars"),                 stagger:"stagger-2" },
+    { icon:<Calendar size={20}/>,       label:"Attendance",    value:isIncharge?"Manage":"View", bg:"rgba(16,185,129,0.1)", color:"#059669",  onClick:()=>navigate("/attendance"),                stagger:"stagger-3" },
+    { icon:<BookOpen size={20}/>,       label:"Marks",         value:isIncharge?"Manage":"View", bg:"rgba(139,92,246,0.1)",color:"#7c3aed",   onClick:()=>navigate("/marks"),                     stagger:"stagger-4" },
+    { icon:<GraduationCap size={20}/>,  label:"Students",      value:"List",                bg:"rgba(245,158,11,0.1)", color:"#d97706",       onClick:()=>navigate("/admin/students"),            stagger:"stagger-5" },
+    { icon:<Globe size={20}/>,          label:"Website",       value:"Visit",               bg:"rgba(232,96,28,0.08)",color:"var(--orange)",  onClick:()=>window.open(COLLEGE_WEBSITE,"_blank"), stagger:"stagger-6" },
   ];
-
-  const txt   = { color: "hsl(260 40% 20%)" };
-  const muted = { color: "hsl(260 20% 50%)" };
 
   return (
     <div className="relative min-h-screen">
       <AnimatedBackground />
       <div className="relative z-10">
         <Navbar />
-        <div className="mx-auto max-w-5xl p-4 md:p-6">
+        <div className="max-w-2xl mx-auto p-4 space-y-4 pb-8">
 
-          <div className="mb-5 animate-fade-in-up">
-            <h1 className="text-2xl font-bold" style={{ fontFamily: "Outfit, sans-serif", ...txt }}>
-              Welcome, {(user?.name || "Lecturer").split(" ")[0]} 👋
-            </h1>
-            <p className="text-sm" style={muted}>{inchargeLabel}</p>
+          {/* Hero */}
+          <div className="ndc-hero stagger-1">
+            <div className="relative z-10">
+              <p className="text-xs font-semibold mb-1" style={{ color:"rgba(255,255,255,0.6)", fontFamily:"Sora,sans-serif" }}>
+                {greet} 👋
+              </p>
+              <h1 className="text-xl font-bold text-white mb-1" style={{ fontFamily:"Sora,sans-serif" }}>
+                {user?.name?.split(" ").slice(0,2).join(" ") || "Lecturer"}
+              </h1>
+              <div className="flex flex-wrap gap-2">
+                <span className="badge badge-orange text-xs">{designation}</span>
+                <span className="badge" style={{ background:"rgba(255,255,255,0.12)", color:"rgba(255,255,255,0.8)", fontSize:"11px" }}>
+                  {department}
+                </span>
+                {isIncharge && (
+                  <span className="badge" style={{ background:"rgba(232,96,28,0.25)", color:"#f07840", fontSize:"11px" }}>
+                    📋 Incharge: {group}-{section}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Profile + info row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-
-            <GlassCard strong shimmer className="card-stagger-1">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="icon-badge bg-violet-400/25"><User size={22} className="text-violet-600" /></div>
-                <div className="min-w-0">
-                  <p className="font-bold text-sm truncate" style={{ fontFamily: "Outfit, sans-serif", ...txt }}>{user?.name}</p>
-                  <p className="text-[11px]" style={muted}>{designation}</p>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                {[["Department", department], ["Role", inchargeLabel]].map(([k, v]) => (
-                  <div key={k} className="flex justify-between text-xs">
-                    <span style={muted}>{k}</span>
-                    <span className="font-semibold text-right max-w-[58%] truncate" style={txt}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            </GlassCard>
-
-            <GlassCard onClick={() => navigate("/notifications")} className="card-stagger-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Bell size={13} className="text-blue-600" />
-                <p className="text-[10px] font-semibold uppercase tracking-wider" style={muted}>Latest Notice</p>
-              </div>
-              <p className="text-xs font-semibold line-clamp-3" style={txt}>{latestNotice?.title || "No notices yet"}</p>
-            </GlassCard>
-
-            <GlassCard onClick={() => navigate("/circulars")} className="card-stagger-3">
-              <div className="flex items-center gap-2 mb-2">
-                <FileText size={13} className="text-fuchsia-600" />
-                <p className="text-[10px] font-semibold uppercase tracking-wider" style={muted}>Latest Circular</p>
-              </div>
-              <p className="text-xs font-semibold line-clamp-3" style={txt}>{latestCircular?.title || "No circulars yet"}</p>
-            </GlassCard>
-          </div>
-
-          <p className="px-1 mb-3 text-xs font-semibold uppercase tracking-widest" style={{ color: "hsl(260 30% 50%)" }}>Quick Access</p>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {panels.map(p => (
-              <div key={p.label} onClick={p.onClick} className={`glass-panel flex flex-col items-center justify-center text-center p-4 aspect-square ${p.stagger}`}>
-                <div className={`icon-badge ${p.bg} mb-2.5`}><span className={p.color}>{p.icon}</span></div>
-                <p className="text-sm font-bold leading-tight" style={{ fontFamily: "Outfit, sans-serif", ...txt }}>{p.label}</p>
-                <p className="text-[10px] mt-0.5 line-clamp-1" style={muted}>{p.sub}</p>
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-3 stagger-2">
+            {[
+              { label:"Notices",   value:notices.length,   color:"var(--navy)",   bg:"rgba(15,45,94,0.08)"   },
+              { label:"Circulars", value:circulars.length, color:"var(--orange)", bg:"rgba(232,96,28,0.08)" },
+              { label:"Semester",  value:"Active",          color:"#059669",       bg:"rgba(16,185,129,0.08)" },
+            ].map(s=>(
+              <div key={s.label} className="stat-card text-center">
+                <p className="text-2xl font-black mb-0.5" style={{ fontFamily:"Sora,sans-serif", color:s.color }}>{s.value}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color:"var(--text-3)" }}>{s.label}</p>
               </div>
             ))}
+          </div>
+
+          {/* Quick action panels */}
+          <div>
+            <p className="section-title mb-3 stagger-3">Quick Access</p>
+            <div className="grid grid-cols-3 gap-3">
+              {panels.map(p=>(
+                <div key={p.label} onClick={p.onClick} className={`action-panel ${p.stagger}`}>
+                  <div className="p-icon" style={{ background:p.bg }}>
+                    <span style={{ color:p.color }}>{p.icon}</span>
+                  </div>
+                  <p className="p-value" style={{ color:p.color }}>{p.value}</p>
+                  <p className="p-label">{p.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Latest notice + circular */}
+          <div className="stagger-4">
+            <p className="section-title mb-3">Latest Updates</p>
+            <div className="space-y-2">
+              {notices.slice(0,2).map((n,i)=>(
+                <div key={n.id} className="notice-item" onClick={()=>navigate("/notifications")}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="badge badge-navy text-[10px]">Notice</span>
+                      </div>
+                      <p className="text-sm font-semibold line-clamp-1" style={{ color:"var(--text-1)" }}>{n.title}</p>
+                      <p className="text-xs mt-0.5 line-clamp-1" style={{ color:"var(--text-3)" }}>{n.content}</p>
+                    </div>
+                    <ChevronRight size={14} style={{ color:"var(--text-3)", flexShrink:0, marginTop:2 }} />
+                  </div>
+                </div>
+              ))}
+              {circulars.slice(0,1).map((c,i)=>(
+                <div key={c.id} className="notice-item" onClick={()=>navigate("/circulars")}
+                  style={{ borderLeftColor:"var(--navy)" }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="badge badge-orange text-[10px]">Circular</span>
+                      </div>
+                      <p className="text-sm font-semibold line-clamp-1" style={{ color:"var(--text-1)" }}>{c.title}</p>
+                    </div>
+                    <ChevronRight size={14} style={{ color:"var(--text-3)", flexShrink:0, marginTop:2 }} />
+                  </div>
+                </div>
+              ))}
+              {notices.length===0&&circulars.length===0 && (
+                <div className="text-center py-6 rounded-xl" style={{ background:"var(--surface-2)" }}>
+                  <p className="text-sm" style={{ color:"var(--text-3)" }}>No updates yet</p>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

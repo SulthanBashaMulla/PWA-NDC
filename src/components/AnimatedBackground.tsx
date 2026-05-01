@@ -4,5 +4,4 @@ const AnimatedBackground = () => (
     <div className="orb-4" />
   </div>
 );
-
 export default AnimatedBackground;
