@@ -6,22 +6,27 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 
-// Pages (thin wrappers)
-import Index          from "./pages/Index";
-import Dashboard      from "./pages/Dashboard";
-import Notifications  from "./pages/Notifications";
-import Circulars      from "./pages/Circulars";
-import Marks          from "./pages/Marks";
-import Attendance     from "./pages/Attendance";
+// Pages
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Notifications from "./pages/Notifications";
+import Circulars from "./pages/Circulars";
+import Marks from "./pages/Marks";
+import Attendance from "./pages/Attendance";
 import LecturersListPage from "./components/LecturersListPage";
-import StudentsListPage  from "./components/StudentsListPage";
-import NotFound       from "./pages/NotFound";
+import StudentsListPage from "./components/StudentsListPage";
+import NotFound from "./pages/NotFound";
+
+// ✅ Timetable Pages
+import StudentTimetablePage from "@/components/timetable/StudentTimetablePage";
+import LecturerTimetablePage from "@/components/timetable/LecturerTimetablePage";
+import AdminTimetablePage from "@/components/timetable/AdminTimetablePage";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
 });
 
-// Full-screen loading spinner shown while Firebase resolves auth state
+// Loading Screen
 const AuthLoading = () => (
   <div className="relative min-h-screen flex items-center justify-center">
     <AnimatedBackground />
@@ -40,19 +45,39 @@ const AuthLoading = () => (
   </div>
 );
 
-// Guard: redirect unauthenticated users to /
+// Auth Guard
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
-  if (!user)   return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
-// Guard: redirect authenticated users away from login
+// Guest Guard
 const RequireGuest = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
-  if (user)    return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+};
+
+// ✅ Role Guard
+const RequireRole = ({
+  role,
+  children,
+}: {
+  role: "student" | "lecturer" | "admin";
+  children: React.ReactNode;
+}) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <AuthLoading />;
+  if (!user) return <Navigate to="/" replace />;
+
+  if (user.role !== role) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -62,13 +87,43 @@ const AppRoutes = () => (
     <Route path="/" element={<RequireGuest><Index /></RequireGuest>} />
 
     {/* Protected */}
-    <Route path="/dashboard"        element={<RequireAuth><Dashboard /></RequireAuth>} />
-    <Route path="/notifications"    element={<RequireAuth><Notifications /></RequireAuth>} />
-    <Route path="/circulars"        element={<RequireAuth><Circulars /></RequireAuth>} />
-    <Route path="/marks"            element={<RequireAuth><Marks /></RequireAuth>} />
-    <Route path="/attendance"       element={<RequireAuth><Attendance /></RequireAuth>} />
-    <Route path="/admin/lecturers"  element={<RequireAuth><LecturersListPage /></RequireAuth>} />
-    <Route path="/admin/students"   element={<RequireAuth><StudentsListPage /></RequireAuth>} />
+    <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+    <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+    <Route path="/circulars" element={<RequireAuth><Circulars /></RequireAuth>} />
+    <Route path="/marks" element={<RequireAuth><Marks /></RequireAuth>} />
+    <Route path="/attendance" element={<RequireAuth><Attendance /></RequireAuth>} />
+
+    {/* ✅ Timetable Routes */}
+    <Route
+      path="/timetable/student"
+      element={
+        <RequireRole role="student">
+          <StudentTimetablePage />
+        </RequireRole>
+      }
+    />
+
+    <Route
+      path="/timetable/lecturer"
+      element={
+        <RequireRole role="lecturer">
+          <LecturerTimetablePage />
+        </RequireRole>
+      }
+    />
+
+    <Route
+      path="/timetable/admin"
+      element={
+        <RequireRole role="admin">
+          <AdminTimetablePage />
+        </RequireRole>
+      }
+    />
+
+    {/* Admin Panels */}
+    <Route path="/admin/lecturers" element={<RequireAuth><LecturersListPage /></RequireAuth>} />
+    <Route path="/admin/students" element={<RequireAuth><StudentsListPage /></RequireAuth>} />
 
     {/* 404 */}
     <Route path="*" element={<NotFound />} />
