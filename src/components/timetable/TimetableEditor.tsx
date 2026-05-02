@@ -13,8 +13,8 @@ import type { LecturerProfile } from "@/firebase/firestore";
 import { Plus, Trash2, Save, ChevronLeft } from "lucide-react";
 
 // Max slots per session
-const MAX_FN = 3;
-const MAX_AN = 2;
+const MAX_FN = 5;
+const MAX_AN = 5;
 
 const emptySlot = (): TimetableSlot => ({
   id:           newSlotId(),
