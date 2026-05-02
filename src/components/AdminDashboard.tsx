@@ -66,14 +66,14 @@ const AdminDashboard = () => {
 
   // Management panels
   const panels = [
-    { icon:<Bell size={22}/>,          label:"Notifications", sub:"Manage notices",  isNew:isNewNotice, color:"var(--navy)",   bg:"rgba(15,45,94,0.1)",    onClick:()=>navigate("/notifications"),           stagger:"stagger-1" },
-    { icon:<Calendar size={22}/>,       label:"Timetable",     sub:"Manage schedule",                    color:"var(--orange)", bg:"rgba(232,96,28,0.1)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-2" },
-    { icon:<Users size={22}/>,          label:"Lecturers",     sub:"Faculty list",                        color:"#2563eb",       bg:"rgba(37,99,235,0.1)",   onClick:()=>navigate("/admin/lecturers"),         stagger:"stagger-3" },
-    { icon:<GraduationCap size={22}/>,  label:"Students",      sub:"Student list",                        color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
-    { icon:<FileText size={22}/>,       label:"Circulars",     sub:"Manage circulars",                    color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>navigate("/circulars"),               stagger:"stagger-5" },
+    { icon:<Bell size={22}/>,          label:"Notifications",  isNew:isNewNotice, color:"var(--navy)",   bg:"rgba(15,45,94,0.1)",    onClick:()=>navigate("/notifications"),           stagger:"stagger-1" },
+    { icon:<Calendar size={22}/>,       label:"Timetable",                    color:"var(--orange)", bg:"rgba(232,96,28,0.1)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-2" },
+    { icon:<Users size={22}/>,          label:"Lecturers",                        color:"#2563eb",       bg:"rgba(37,99,235,0.1)",   onClick:()=>navigate("/admin/lecturers"),         stagger:"stagger-3" },
+    { icon:<GraduationCap size={22}/>,  label:"Students",                      color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
+    { icon:<FileText size={22}/>,       label:"Circulars",                   color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>navigate("/circulars"),               stagger:"stagger-5" },
     { icon:<Download size={22}/>,       label:"Download",      sub:"Export data",                         color:"#d97706",       bg:"rgba(245,158,11,0.1)",  onClick:()=>navigate("/download"),                stagger:"stagger-6" },
-    { icon:<Globe size={22}/>,          label:"Website",       sub:"College portal",                      color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-1" },
-    { icon:<Settings size={22}/>,       label:"Settings",      sub:"System config",                       color:"#475569",       bg:"rgba(100,116,139,0.1)", onClick:()=>{},                                   stagger:"stagger-2" },
+    { icon:<Globe size={22}/>,          label:"Website",                     color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-1" },
+    { icon:<Settings size={22}/>,       label:"Settings",                      color:"#475569",       bg:"rgba(100,116,139,0.1)", onClick:()=>{},                                   stagger:"stagger-2" },
   ];
 
   return (
