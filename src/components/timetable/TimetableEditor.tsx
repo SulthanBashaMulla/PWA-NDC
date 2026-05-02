@@ -1,256 +1,288 @@
-// src/components/timetable/TimetableEditor.tsx  
-// ═══════════════════════════════════════════════════════════════  
-// Admin editor — session-based editing (ForeNoon / AfterNoon)
-// UPDATED: session restriction + validation
-// ═══════════════════════════════════════════════════════════════  
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
+import AnimatedBackground from "@/components/AnimatedBackground";
+import {
+  getDayTimetable, saveSession, newSlotId, DAYS,
+  type Day, type Session, type TimetableSlot,
+} from "@/firebase/timetable";
+import { fetchSubjects, getSubjectsForGroup, type SubjectConfig } from "@/config/college";
+import { getAllLecturers } from "@/firebase/firestore";
+import type { LecturerProfile } from "@/firebase/firestore";
+import { Plus, Trash2, Save, ChevronLeft } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";  
-import { Card } from "@/components/ui/card";  
-import { Button } from "@/components/ui/button";  
-import { Input } from "@/components/ui/input";  
-import { Label } from "@/components/ui/label";  
-import {  
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,  
-} from "@/components/ui/select";  
-import { Trash2, Plus, Save, Loader2 } from "lucide-react";  
-import { toast } from "sonner";  
-import {  
-  Day, Session, TimetableSlot,  
-  newSlotId, saveDayBoth,  
-} from "@/firebase/timetable";  
-import { useDayTimetable } from "@/hooks/useTimetable";  
-import {  
-  getSubjectsForGroup, SubjectConfig,  
-} from "@/config/college";  
-import { getAllLecturers, LecturerProfile } from "@/firebase/firestore";  
-  
-interface Props {  
-  group:    string;  
-  section:  string;  
-  day:      Day;  
-  semester: number;  
-  session:  Session; // ✅ NEW
-  adminUid: string;  
-}  
-  
-export default function TimetableEditor({  
-  group, section, day, semester, session, adminUid,  
-}: Props) {  
+// Max slots per session
+const MAX_FN = 3;
+const MAX_AN = 2;
 
-  const { data, loading } = useDayTimetable(group, section, day);  
+const emptySlot = (): TimetableSlot => ({
+  id:           newSlotId(),
+  startTime:    "",
+  endTime:      "",
+  subjectCode:  "",
+  subjectName:  "",
+  lecturerId:   "",
+  lecturerName: "",
+  room:         "",
+  notes:        "",
+});
 
-  const [foreNoon,  setForeNoon]  = useState<TimetableSlot[]>([]);  
-  const [afterNoon, setAfterNoon] = useState<TimetableSlot[]>([]);  
+const TimetableEditor = () => {
+  const { group = "", section = "", day = "Monday" } = useParams<{
+    group: string; section: string; day: string;
+  }>();
+  const { user }   = useAuth();
+  const navigate   = useNavigate();
 
-  const [dirty, setDirty] = useState(false);  
-  const [saving, setSaving] = useState(false);  
+  const [fnSlots,   setFnSlots]   = useState<TimetableSlot[]>([]);
+  const [anSlots,   setAnSlots]   = useState<TimetableSlot[]>([]);
+  const [subjects,  setSubjects]  = useState<SubjectConfig[]>([]);
+  const [lecturers, setLecturers] = useState<LecturerProfile[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [saving,    setSaving]    = useState<Session | null>(null);
+  const [saved,     setSaved]     = useState<Session | null>(null);
+  const [error,     setError]     = useState("");
 
-  const [subjects,  setSubjects]  = useState<SubjectConfig[]>([]);  
-  const [lecturers, setLecturers] = useState<LecturerProfile[]>([]);  
+  useEffect(() => {
+    Promise.all([
+      getDayTimetable(group, section, day as Day).then(d => {
+        setFnSlots(d.foreNoon.length  > 0 ? d.foreNoon  : [emptySlot()]);
+        setAnSlots(d.afterNoon.length > 0 ? d.afterNoon : [emptySlot()]);
+      }),
+      fetchSubjects().then(setSubjects),
+      getAllLecturers().then(setLecturers),
+    ]).catch(() => setError("Failed to load data."))
+      .finally(() => setLoading(false));
+  }, [group, section, day]);
 
-  // ─────────────────────────────────────────
-  // Hydrate
-  // ─────────────────────────────────────────
-  useEffect(() => {  
-    if (!data || dirty) return;  
-    setForeNoon(data.foreNoon);  
-    setAfterNoon(data.afterNoon);  
-  }, [data, dirty]);  
+  const groupSubjects = subjects.filter(s => s.groupCode === group);
 
-  // ─────────────────────────────────────────
-  // Load dropdowns
-  // ─────────────────────────────────────────
-  useEffect(() => {  
-    let alive = true;  
-
-    Promise.all([  
-      getSubjectsForGroup(group, semester),  
-      getAllLecturers(),  
-    ])
-    .then(([subs, lecs]) => {  
-      if (!alive) return;  
-      setSubjects(subs);  
-      setLecturers(lecs);  
+  const updateSlot = (
+    session: Session, idx: number, field: keyof TimetableSlot, value: string
+  ) => {
+    const setter = session === "foreNoon" ? setFnSlots : setAnSlots;
+    setter(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [field]: value };
+      // Auto-fill subject name when code selected
+      if (field === "subjectCode") {
+        const sub = groupSubjects.find(s => s.subjectCode === value);
+        if (sub) next[idx].subjectName = sub.subjectName;
+      }
+      // Auto-fill lecturer name when id selected
+      if (field === "lecturerId") {
+        const lec = lecturers.find(l => l.lecturerId === value);
+        if (lec) next[idx].lecturerName = lec.name;
+      }
+      return next;
     });
-
-    return () => { alive = false; };  
-  }, [group, semester]);  
-
-  // ─────────────────────────────────────────
-  // Slot helpers
-  // ─────────────────────────────────────────
-  const update = (s: Session, next: TimetableSlot[]) => {  
-    setDirty(true);  
-    if (s === "foreNoon") setForeNoon(next);  
-    else setAfterNoon(next);  
-  };  
-
-  const addSlot = (s: Session) => {  
-    const blank: TimetableSlot = {  
-      id: newSlotId(),  
-      startTime: s === "foreNoon" ? "09:00" : "14:00",  
-      endTime:   s === "foreNoon" ? "10:00" : "15:00",  
-      subjectCode: "",  
-      subjectName: "",  
-      lecturerId: "",  
-      lecturerName: "",  
-      room: "",  
-    };  
-
-    update(s, [...(s === "foreNoon" ? foreNoon : afterNoon), blank]);  
-  };  
-
-  const removeSlot = (s: Session, id: string) => {  
-    update(s, (s === "foreNoon" ? foreNoon : afterNoon).filter(x => x.id !== id));  
-  };  
-
-  const patchSlot = (s: Session, id: string, patch: Partial<TimetableSlot>) => {  
-    update(
-      s,
-      (s === "foreNoon" ? foreNoon : afterNoon).map(x =>
-        x.id === id ? { ...x, ...patch } : x
-      )
-    );  
-  };  
-
-  // ─────────────────────────────────────────
-  // SAVE (IMPORTANT LOGIC)
-  // ─────────────────────────────────────────
-  const onSave = async () => {
-
-    const activeSlots = session === "foreNoon" ? foreNoon : afterNoon;
-
-    // ✅ VALIDATION
-    if (session === "foreNoon" && activeSlots.length > 3) {
-      toast.error("Fore Noon can have max 3 periods.");
-      return;
-    }
-
-    if (session === "afterNoon" && activeSlots.length > 2) {
-      toast.error("After Noon can have max 2 periods.");
-      return;
-    }
-
-    for (const s of activeSlots) {
-      if (!s.startTime || !s.endTime) {
-        toast.error("Time missing"); return;
-      }
-      if (s.startTime >= s.endTime) {
-        toast.error("Invalid time"); return;
-      }
-      if (!s.subjectName) {
-        toast.error("Select subject"); return;
-      }
-      if (!s.lecturerId) {
-        toast.error("Assign lecturer"); return;
-      }
-    }
-
-    setSaving(true);
-
-    try {
-      await saveDayBoth(
-        group,
-        section,
-        day,
-        session === "foreNoon" ? foreNoon : [],
-        session === "afterNoon" ? afterNoon : [],
-        adminUid
-      );
-
-      toast.success("Timetable saved");
-      setDirty(false);
-
-    } catch (e: any) {
-      toast.error("Save failed");
-    } finally {
-      setSaving(false);
-    }
   };
 
-  if (loading) {
-    return (
-      <Card className="p-6 flex items-center gap-2">
-        <Loader2 className="animate-spin" size={16} /> Loading…
-      </Card>
-    );
-  }
+  const addSlot = (session: Session) => {
+    const max    = session === "foreNoon" ? MAX_FN : MAX_AN;
+    const slots  = session === "foreNoon" ? fnSlots : anSlots;
+    const setter = session === "foreNoon" ? setFnSlots : setAnSlots;
+    if (slots.length >= max) {
+      setError(`Max ${max} periods for ${session === "foreNoon" ? "Fore Noon" : "After Noon"}.`);
+      return;
+    }
+    setError("");
+    setter(prev => [...prev, emptySlot()]);
+  };
 
-  return (
-    <div className="space-y-4">
+  const removeSlot = (session: Session, idx: number) => {
+    const setter = session === "foreNoon" ? setFnSlots : setAnSlots;
+    setter(prev => prev.filter((_, i) => i !== idx));
+  };
 
-      {/* ONLY SHOW ACTIVE SESSION */}
-      {session === "foreNoon" && (
-        <SessionEditor
-          title="Fore Noon"
-          slots={foreNoon}
-          subjects={subjects}
-          lecturers={lecturers}
-          onAdd={() => addSlot("foreNoon")}
-          onRemove={id => removeSlot("foreNoon", id)}
-          onPatch={(id, p) => patchSlot("foreNoon", id, p)}
-        />
-      )}
+  const handleSave = async (session: Session) => {
+    const slots = session === "foreNoon" ? fnSlots : anSlots;
+    const valid = slots.filter(s => s.subjectName.trim() && s.startTime && s.endTime);
+    if (valid.length === 0) { setError("Add at least one complete period before saving."); return; }
+    setSaving(session); setError("");
+    try {
+      await saveSession(group, section, day as Day, session, valid, user?.uid || "admin");
+      setSaved(session);
+      setTimeout(() => setSaved(null), 2500);
+    } catch { setError("Save failed. Check connection."); }
+    finally { setSaving(null); }
+  };
 
-      {session === "afterNoon" && (
-        <SessionEditor
-          title="After Noon"
-          slots={afterNoon}
-          subjects={subjects}
-          lecturers={lecturers}
-          onAdd={() => addSlot("afterNoon")}
-          onRemove={id => removeSlot("afterNoon", id)}
-          onPatch={(id, p) => patchSlot("afterNoon", id, p)}
-        />
-      )}
-
-      <div className="flex justify-end">
-        <Button onClick={onSave} disabled={!dirty || saving}>
-          {saving ? <Loader2 className="animate-spin mr-2" size={14} /> : <Save size={14} className="mr-2" />}
-          Save {day}
-        </Button>
+  const SlotForm = ({ slot, idx, session }: { slot: TimetableSlot; idx: number; session: Session }) => (
+    <div className="ndc-card mb-3 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="badge badge-navy text-[10px]">Period {idx + 1}</span>
+        <button onClick={() => removeSlot(session, idx)}
+          className="rounded-lg p-1.5 hover:bg-red-50" style={{ color:"#ef4444" }}>
+          <Trash2 size={14} />
+        </button>
       </div>
-
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label className="block text-xs font-bold mb-1" style={{ fontFamily:"Sora,sans-serif", color:"var(--text-2)" }}>
+            Start Time
+          </label>
+          <input type="time" value={slot.startTime}
+            onChange={e => updateSlot(session, idx, "startTime", e.target.value)}
+            className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }} />
+        </div>
+        <div>
+          <label className="block text-xs font-bold mb-1" style={{ fontFamily:"Sora,sans-serif", color:"var(--text-2)" }}>
+            End Time
+          </label>
+          <input type="time" value={slot.endTime}
+            onChange={e => updateSlot(session, idx, "endTime", e.target.value)}
+            className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }} />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div>
+          <label className="block text-xs font-bold mb-1" style={{ fontFamily:"Sora,sans-serif", color:"var(--text-2)" }}>
+            Subject
+          </label>
+          {groupSubjects.length > 0 ? (
+            <select value={slot.subjectCode}
+              onChange={e => updateSlot(session, idx, "subjectCode", e.target.value)}
+              className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }}>
+              <option value="">Select subject…</option>
+              {groupSubjects.map(s => (
+                <option key={s.subjectCode} value={s.subjectCode}>{s.subjectName}</option>
+              ))}
+            </select>
+          ) : (
+            <input type="text" value={slot.subjectName} placeholder="Subject name…"
+              onChange={e => updateSlot(session, idx, "subjectName", e.target.value)}
+              className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }} />
+          )}
+        </div>
+        <div>
+          <label className="block text-xs font-bold mb-1" style={{ fontFamily:"Sora,sans-serif", color:"var(--text-2)" }}>
+            Lecturer
+          </label>
+          {lecturers.length > 0 ? (
+            <select value={slot.lecturerId}
+              onChange={e => updateSlot(session, idx, "lecturerId", e.target.value)}
+              className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }}>
+              <option value="">Select lecturer…</option>
+              {lecturers.map(l => (
+                <option key={l.lecturerId} value={l.lecturerId}>{l.name} ({l.lecturerId})</option>
+              ))}
+            </select>
+          ) : (
+            <input type="text" value={slot.lecturerName} placeholder="Lecturer name…"
+              onChange={e => updateSlot(session, idx, "lecturerName", e.target.value)}
+              className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }} />
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="block text-xs font-bold mb-1" style={{ fontFamily:"Sora,sans-serif", color:"var(--text-2)" }}>
+              Room (optional)
+            </label>
+            <input type="text" value={slot.room || ""} placeholder="e.g. 301"
+              onChange={e => updateSlot(session, idx, "room", e.target.value)}
+              className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }} />
+          </div>
+          <div>
+            <label className="block text-xs font-bold mb-1" style={{ fontFamily:"Sora,sans-serif", color:"var(--text-2)" }}>
+              Notes (optional)
+            </label>
+            <input type="text" value={slot.notes || ""} placeholder="e.g. Lab"
+              onChange={e => updateSlot(session, idx, "notes", e.target.value)}
+              className="ndc-input" style={{ padding:"8px 10px", fontSize:"13px" }} />
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
 
-
-// ─────────────────────────────────────────
-// SESSION EDITOR (unchanged)
-// ─────────────────────────────────────────
-function SessionEditor({
-  title, slots, subjects, lecturers,
-  onAdd, onRemove, onPatch,
-}: any) {
-
-  const sorted = useMemo(
-    () => [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime)),
-    [slots]
+  const SessionBlock = ({
+    label, session, slots, max, emoji,
+  }: { label: string; session: Session; slots: TimetableSlot[]; max: number; emoji: string }) => (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <p className="section-title">{emoji} {label}</p>
+        <span className="badge badge-gray text-[10px]">{slots.length}/{max} periods</span>
+      </div>
+      {slots.map((slot, idx) => (
+        <SlotForm key={slot.id} slot={slot} idx={idx} session={session} />
+      ))}
+      <div className="flex gap-2 mt-2">
+        {slots.length < max && (
+          <button onClick={() => addSlot(session)}
+            className="btn-navy flex items-center gap-2 text-sm"
+            style={{ width:"auto", padding:"9px 16px" }}>
+            <Plus size={14} /> Add Period
+          </button>
+        )}
+        <button onClick={() => handleSave(session)}
+          disabled={saving === session}
+          className="btn-orange flex items-center gap-2 text-sm flex-1">
+          {saving === session
+            ? <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            : <Save size={14} />}
+          {saving === session ? "Saving…" : saved === session ? "✅ Saved!" : `Save ${label}`}
+        </button>
+      </div>
+    </div>
   );
 
   return (
-    <Card className="p-4">
-      <div className="flex justify-between mb-3">
-        <h3>{title}</h3>
-        <Button size="sm" onClick={onAdd}>
-          <Plus size={14}/> Add
-        </Button>
-      </div>
+    <div className="relative min-h-screen">
+      <AnimatedBackground />
+      <div className="relative z-10">
+        <Navbar />
+        <div className="max-w-2xl mx-auto p-4 pb-8">
 
-      {sorted.map(slot => (
-        <div key={slot.id} className="border p-3 mb-2">
-          <Input type="time" value={slot.startTime}
-            onChange={e => onPatch(slot.id, { startTime: e.target.value })} />
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-5 animate-fade-in-up">
+            <button onClick={() => navigate(-1)}
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background:"var(--surface)", border:"1px solid rgba(15,45,94,0.1)", color:"var(--navy)" }}>
+              <ChevronLeft size={18} />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+                Edit Timetable
+              </h1>
+              <p className="text-sm" style={{ color:"var(--text-3)" }}>
+                {group} · Section {section} · {day}
+              </p>
+            </div>
+          </div>
 
-          <Input type="time" value={slot.endTime}
-            onChange={e => onPatch(slot.id, { endTime: e.target.value })} />
+          {/* Error */}
+          {error && (
+            <div className="mb-4 rounded-xl px-4 py-3 text-sm font-semibold animate-fade-in"
+              style={{ background:"rgba(239,68,68,0.08)", color:"#dc2626", border:"1px solid rgba(239,68,68,0.15)" }}>
+              {error}
+            </div>
+          )}
 
-          <Button onClick={() => onRemove(slot.id)}>
-            <Trash2 size={14}/> Remove
-          </Button>
+          {/* Loading */}
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="h-16 rounded-[16px] animate-pulse"
+                  style={{ background:"rgba(15,45,94,0.06)" }} />
+              ))}
+            </div>
+          ) : (
+            <>
+              <SessionBlock
+                label="Fore Noon" session="foreNoon"
+                slots={fnSlots} max={MAX_FN} emoji="☀️" />
+              <SessionBlock
+                label="After Noon" session="afterNoon"
+                slots={anSlots} max={MAX_AN} emoji="🌤" />
+            </>
+          )}
+
         </div>
-      ))}
-    </Card>
+      </div>
+    </div>
   );
-}
+};
+
+export default TimetableEditor;

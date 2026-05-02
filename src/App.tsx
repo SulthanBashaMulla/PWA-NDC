@@ -7,78 +7,75 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 
 // Pages
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Notifications from "./pages/Notifications";
-import Circulars from "./pages/Circulars";
-import Marks from "./pages/Marks";
-import Attendance from "./pages/Attendance";
-import LecturersListPage from "./components/LecturersListPage";
-import StudentsListPage from "./components/StudentsListPage";
-import NotFound from "./pages/NotFound";
+import Index           from "./pages/Index";
+import Dashboard       from "./pages/Dashboard";
+import Notifications   from "./pages/Notifications";
+import Circulars       from "./pages/Circulars";
+import Marks           from "./pages/Marks";
+import Attendance      from "./pages/Attendance";
+import NotFound        from "./pages/NotFound";
 
-// ✅ Timetable Pages
-import StudentTimetablePage from "@/components/timetable/StudentTimetablePage";
-import LecturerTimetablePage from "@/components/timetable/LecturerTimetablePage";
-import AdminTimetablePage from "@/components/timetable/AdminTimetablePage";
+// Components (direct imports)
+import LecturersListPage from "./components/LecturersListPage";
+import StudentsListPage  from "./components/StudentsListPage";
+
+// Timetable — role-based
+import AdminTimetablePage    from "./components/timetable/AdminTimetablePage";
+import LecturerTimetablePage from "./components/timetable/LecturerTimetablePage";
+import StudentTimetablePage  from "./components/timetable/StudentTimetablePage";
+import TimetableEditor       from "./components/timetable/TimetableEditor";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
 });
 
-// Loading Screen
+// Full-screen loading spinner
 const AuthLoading = () => (
   <div className="relative min-h-screen flex items-center justify-center">
     <AnimatedBackground />
     <div className="relative z-10 flex flex-col items-center gap-4">
-      <div
-        className="h-12 w-12 rounded-full border-4 border-white/30 border-t-white animate-spin"
-        style={{ animationDuration: "0.8s" }}
-      />
-      <p
-        className="text-sm font-semibold"
-        style={{ fontFamily: "Outfit, sans-serif", color: "hsl(260 40% 25%)" }}
-      >
+      <div className="h-12 w-12 rounded-full border-4 border-white/30 border-t-white animate-spin"
+        style={{ animationDuration:"0.8s" }} />
+      <p className="text-sm font-semibold"
+        style={{ fontFamily:"Sora,sans-serif", color:"hsl(260 40% 25%)" }}>
         Loading NDC…
       </p>
     </div>
   </div>
 );
 
-// Auth Guard
+// Guard: redirect unauthenticated users to /
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
-  if (!user) return <Navigate to="/" replace />;
+  if (!user)   return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
-// Guest Guard
+// Guard: redirect authenticated users away from login
 const RequireGuest = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user)    return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
-// ✅ Role Guard
-const RequireRole = ({
-  role,
-  children,
-}: {
-  role: "student" | "lecturer" | "admin";
-  children: React.ReactNode;
-}) => {
+// Guard: admin-only routes
+const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-
-  if (loading) return <AuthLoading />;
-  if (!user) return <Navigate to="/" replace />;
-
-  if (user.role !== role) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
+  if (loading)               return <AuthLoading />;
+  if (!user)                 return <Navigate to="/" replace />;
+  if (user.role !== "admin") return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
+};
+
+// Timetable router — shows correct page per role
+const TimetableRouter = () => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/" replace />;
+  if (user.role === "admin")    return <AdminTimetablePage />;
+  if (user.role === "lecturer") return <LecturerTimetablePage />;
+  return <StudentTimetablePage />;
 };
 
 const AppRoutes = () => (
@@ -86,44 +83,25 @@ const AppRoutes = () => (
     {/* Public */}
     <Route path="/" element={<RequireGuest><Index /></RequireGuest>} />
 
-    {/* Protected */}
-    <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+    {/* Protected — all roles */}
+    <Route path="/dashboard"     element={<RequireAuth><Dashboard /></RequireAuth>} />
     <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
-    <Route path="/circulars" element={<RequireAuth><Circulars /></RequireAuth>} />
-    <Route path="/marks" element={<RequireAuth><Marks /></RequireAuth>} />
-    <Route path="/attendance" element={<RequireAuth><Attendance /></RequireAuth>} />
+    <Route path="/circulars"     element={<RequireAuth><Circulars /></RequireAuth>} />
+    <Route path="/marks"         element={<RequireAuth><Marks /></RequireAuth>} />
+    <Route path="/attendance"    element={<RequireAuth><Attendance /></RequireAuth>} />
 
-    {/* ✅ Timetable Routes */}
+    {/* Timetable — role decides which component renders */}
+    <Route path="/timetable" element={<RequireAuth><TimetableRouter /></RequireAuth>} />
+
+    {/* Timetable editor — admin only */}
     <Route
-      path="/timetable/student"
-      element={
-        <RequireRole role="student">
-          <StudentTimetablePage />
-        </RequireRole>
-      }
+      path="/timetable/edit/:group/:section/:day"
+      element={<RequireAdmin><TimetableEditor /></RequireAdmin>}
     />
 
-    <Route
-      path="/timetable/lecturer"
-      element={
-        <RequireRole role="lecturer">
-          <LecturerTimetablePage />
-        </RequireRole>
-      }
-    />
-
-    <Route
-      path="/timetable/admin"
-      element={
-        <RequireRole role="admin">
-          <AdminTimetablePage />
-        </RequireRole>
-      }
-    />
-
-    {/* Admin Panels */}
+    {/* Admin lists — accessible by admin + lecturer */}
     <Route path="/admin/lecturers" element={<RequireAuth><LecturersListPage /></RequireAuth>} />
-    <Route path="/admin/students" element={<RequireAuth><StudentsListPage /></RequireAuth>} />
+    <Route path="/admin/students"  element={<RequireAuth><StudentsListPage /></RequireAuth>} />
 
     {/* 404 */}
     <Route path="*" element={<NotFound />} />

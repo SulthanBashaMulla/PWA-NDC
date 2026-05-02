@@ -1,203 +1,151 @@
-// src/components/timetable/LecturerTimetablePage.tsx
-// ═══════════════════════════════════════════════════════════════
-// Lecturer: two tabs.
-//   • My Periods       — every slot across the college that they teach
-//   • Class Timetable  — full week of their incharge class (if any)
-// UPDATED: role-based Incharge logic (no more user.isIncharge)
-// ═══════════════════════════════════════════════════════════════
-
-import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tabs, TabsContent, TabsList, TabsTrigger,
-} from "@/components/ui/tabs";
-import { Loader2, Clock, BookOpen, MapPin, Users } from "lucide-react";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import {
-  DAYS, Day, Session, TimetableSlot, getLecturerWeek,
-} from "@/firebase/timetable";
+import Navbar from "@/components/Navbar";
+import AnimatedBackground from "@/components/AnimatedBackground";
+import { DAYS, SESSION_LABELS, getTodayName } from "@/firebase/timetable";
 import { useWeekTimetable } from "@/hooks/useTimetable";
-import { fetchGroups } from "@/config/college";
-import TimetableGrid from "./TimetableGrid";
+import type { Day } from "@/firebase/timetable";
+import { Clock } from "lucide-react";
 
-interface MyPeriod {
-  group: string; section: string; day: Day; session: Session; slot: TimetableSlot;
-}
+const LecturerTimetablePage = () => {
+  const { user }   = useAuth();
+  const group      = (user as any)?.group    || "";
+  const section    = (user as any)?.section  || "";
+  const isIncharge = (user as any)?.isIncharge || false; // ← fixed: was user?.roles?.includes()
+  const lecturerId = (user as any)?.lecturerId || "";
 
-export default function LecturerTimetablePage() {
-  const { user } = useAuth();
+  const todayName             = getTodayName();
+  const [selectedDay, setDay] = useState<Day>(todayName);
 
-  // ✅ NEW: role-based check
-  const isIncharge = user?.roles?.includes("Incharge");
-
-  const [periods, setPeriods] = useState<MyPeriod[] | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // ✅ Incharge class only if role exists
-  const inchargeGroup   = isIncharge ? user?.group   : undefined;
-  const inchargeSection = isIncharge ? user?.section : undefined;
-
-  const { week, loading: weekLoading } =
-    useWeekTimetable(inchargeGroup, inchargeSection);
-
-  // Load lecturer periods
-  useEffect(() => {
-    if (!user || user.role !== "lecturer") return;
-
-    let alive = true;
-    setLoading(true);
-
-    fetchGroups()
-      .then(async groups => {
-        const classes = groups.flatMap(g =>
-          g.sections.map(s => ({ group: g.groupCode, section: s })),
-        );
-
-        const list = await getLecturerWeek(classes, user.uid);
-
-        if (!alive) return;
-        setPeriods(list);
-      })
-      .finally(() => { if (alive) setLoading(false); });
-
-    return () => { alive = false; };
-  }, [user]);
-
-  if (!user || user.role !== "lecturer") {
-    return (
-      <div className="p-6">
-        <Card className="p-6">Lecturers only.</Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4">
-
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">My Timetable</h1>
-        <p className="text-sm text-muted-foreground">{user.name}</p>
-
-        {/* ✅ Show badges */}
-        <div className="flex gap-2 mt-2">
-          {user.roles?.map((r: string) => (
-            <Badge key={r}>{r}</Badge>
-          ))}
-        </div>
-      </div>
-
-      <Tabs defaultValue="mine">
-        <TabsList>
-          <TabsTrigger value="mine">My Periods</TabsTrigger>
-
-          {/* ✅ Only enable if Incharge */}
-          <TabsTrigger value="class" disabled={!isIncharge}>
-            Class Timetable {isIncharge && `(${user.group}-${user.section})`}
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ── MY PERIODS ── */}
-        <TabsContent value="mine" className="mt-4">
-          {loading || !periods ? (
-            <Card className="p-6 flex items-center gap-2">
-              <Loader2 className="animate-spin" size={16} />
-              Scanning timetables…
-            </Card>
-          ) : (
-            <MyPeriodsView periods={periods} />
-          )}
-        </TabsContent>
-
-        {/* ── CLASS TIMETABLE ── */}
-        <TabsContent value="class" className="mt-4">
-          {!isIncharge ? (
-            <Card className="p-6 text-sm text-muted-foreground">
-              You are not assigned as a class incharge.
-            </Card>
-          ) : weekLoading || !week ? (
-            <Card className="p-6 flex items-center gap-2">
-              <Loader2 className="animate-spin" size={16} />
-              Loading class timetable…
-            </Card>
-          ) : (
-            <TimetableGrid week={week} highlightLecturerId={user.uid} />
-          )}
-        </TabsContent>
-
-      </Tabs>
-    </div>
+  const { week, loading } = useWeekTimetable(
+    group || undefined, section || undefined
   );
-}
 
-// ── My Periods view ──────────────────────────────────────────
-function MyPeriodsView({ periods }: { periods: MyPeriod[] }) {
-  if (periods.length === 0) {
-    return (
-      <Card className="p-6 text-sm text-muted-foreground">
-        No periods assigned to you yet.
-      </Card>
-    );
-  }
+  const dayData  = week?.[selectedDay];
 
-  const byDay: Record<Day, MyPeriod[]> = {
-    Monday: [], Tuesday: [], Wednesday: [],
-    Thursday: [], Friday: [], Saturday: [],
-  };
-
-  for (const p of periods) byDay[p.day].push(p);
+  // Filter: incharge sees ALL slots for their class
+  // Non-incharge sees only their own slots
+  const fnSlots  = (dayData?.foreNoon  ?? []).filter(s => isIncharge || s.lecturerId === lecturerId);
+  const anSlots  = (dayData?.afterNoon ?? []).filter(s => isIncharge || s.lecturerId === lecturerId);
+  const hasSlots = fnSlots.length > 0 || anSlots.length > 0;
 
   return (
-    <div className="space-y-4">
-      {DAYS.map(day => (
-        <Card key={day} className="p-4">
-          <div className="flex items-baseline justify-between mb-2">
-            <h3 className="font-bold">{day}</h3>
-            <span className="text-xs text-muted-foreground">
-              {byDay[day].length} {byDay[day].length === 1 ? "period" : "periods"}
-            </span>
+    <div className="relative min-h-screen">
+      <AnimatedBackground />
+      <div className="relative z-10">
+        <Navbar />
+        <div className="max-w-2xl mx-auto p-4 pb-8">
+
+          {/* Header */}
+          <div className="mb-5 animate-fade-in-up">
+            <h1 className="text-xl font-bold" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+              Timetable
+            </h1>
+            <p className="text-sm" style={{ color:"var(--text-3)" }}>
+              {isIncharge ? `Class Incharge — ${group} Section ${section}` : "My assigned periods"}
+            </p>
           </div>
 
-          {byDay[day].length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">—</p>
-          ) : (
-            <ul className="space-y-2">
-              {byDay[day].map(p => (
-                <li
-                  key={`${p.group}-${p.section}-${p.session}-${p.slot.id}`}
-                  className="rounded-md border p-2 text-sm"
-                >
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock size={12} />
-                    <span>{p.slot.startTime} – {p.slot.endTime}</span>
-                    <Badge variant="secondary" className="ml-1">
-                      {p.session === "foreNoon" ? "FN" : "AN"}
-                    </Badge>
-                  </div>
+          {/* Day selector */}
+          <div className="ndc-tabs mb-5 stagger-1 overflow-x-auto">
+            {DAYS.map(d => (
+              <button key={d} onClick={() => setDay(d)}
+                className={`ndc-tab whitespace-nowrap ${selectedDay === d ? "active" : ""}`}
+                style={{ minWidth:60 }}>
+                {d === todayName ? `${d.slice(0,3)} ✦` : d.slice(0,3)}
+              </button>
+            ))}
+          </div>
 
-                  <div className="flex items-center gap-1 font-medium mt-0.5">
-                    <BookOpen size={14} />
-                    <span>{p.slot.subjectName}</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground mt-0.5">
-                    <span className="flex items-center gap-1">
-                      <Users size={12} /> {p.group} – {p.section}
-                    </span>
-
-                    {p.slot.room && (
-                      <span className="flex items-center gap-1">
-                        <MapPin size={12} /> {p.slot.room}
-                      </span>
-                    )}
-                  </div>
-                </li>
+          {/* Loading */}
+          {loading && (
+            <div className="space-y-3">
+              {[1,2,3].map(i => (
+                <div key={i} className="h-16 rounded-[16px] animate-pulse" style={{ background:"rgba(15,45,94,0.06)" }} />
               ))}
-            </ul>
+            </div>
           )}
-        </Card>
-      ))}
+
+          {/* No slots */}
+          {!loading && !hasSlots && (
+            <div className="ndc-card text-center py-12">
+              <Clock size={32} className="mx-auto mb-3 opacity-30" style={{ color:"var(--navy)" }} />
+              <p className="font-bold" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+                {isIncharge ? `No classes on ${selectedDay}` : `No periods assigned on ${selectedDay}`}
+              </p>
+            </div>
+          )}
+
+          {/* Fore Noon */}
+          {!loading && fnSlots.length > 0 && (
+            <div className="mb-4 stagger-2">
+              <p className="section-title mb-3">Fore Noon</p>
+              <div className="ndc-card">
+                <div className="divide-y" style={{ borderColor:"var(--bg-2)" }}>
+                  {fnSlots.map(slot => (
+                    <div key={slot.id} className="flex items-center gap-3 p-3">
+                      <div className="w-16 text-center shrink-0">
+                        <p className="text-xs font-bold" style={{ color:"var(--navy)" }}>{slot.startTime}</p>
+                        <p className="text-[10px]" style={{ color:"var(--text-3)" }}>{slot.endTime}</p>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+                          {slot.subjectName}
+                        </p>
+                        <p className="text-xs" style={{ color:"var(--text-3)" }}>{slot.subjectCode}</p>
+                        {isIncharge && (
+                          <p className="text-xs" style={{ color:"var(--orange)" }}>
+                            {slot.lecturerName} ({slot.lecturerId})
+                          </p>
+                        )}
+                      </div>
+                      {slot.room && (
+                        <span className="badge badge-navy text-[10px] shrink-0">🏫 {slot.room}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* After Noon */}
+          {!loading && anSlots.length > 0 && (
+            <div className="stagger-3">
+              <p className="section-title mb-3">After Noon</p>
+              <div className="ndc-card">
+                <div className="divide-y" style={{ borderColor:"var(--bg-2)" }}>
+                  {anSlots.map(slot => (
+                    <div key={slot.id} className="flex items-center gap-3 p-3">
+                      <div className="w-16 text-center shrink-0">
+                        <p className="text-xs font-bold" style={{ color:"var(--navy)" }}>{slot.startTime}</p>
+                        <p className="text-[10px]" style={{ color:"var(--text-3)" }}>{slot.endTime}</p>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+                          {slot.subjectName}
+                        </p>
+                        <p className="text-xs" style={{ color:"var(--text-3)" }}>{slot.subjectCode}</p>
+                        {isIncharge && (
+                          <p className="text-xs" style={{ color:"var(--orange)" }}>
+                            {slot.lecturerName} ({slot.lecturerId})
+                          </p>
+                        )}
+                      </div>
+                      {slot.room && (
+                        <span className="badge badge-orange text-[10px] shrink-0">🏫 {slot.room}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
     </div>
   );
-}
+};
+
+export default LecturerTimetablePage;

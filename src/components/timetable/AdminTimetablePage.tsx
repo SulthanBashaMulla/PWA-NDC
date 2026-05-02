@@ -1,156 +1,203 @@
-// src/components/timetable/AdminTimetablePage.tsx
-// ═══════════════════════════════════════════════════════════════
-// Admin: pick group + section + day + semester, then edit.
-// UPDATED: session-aware (foreNoon / afterNoon)
-// ═══════════════════════════════════════════════════════════════
-
-import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import {
-  fetchGroups, GroupConfig, SEMESTERS,
-} from "@/config/college";
-import { DAYS, Day } from "@/firebase/timetable";
-import TimetableEditor from "./TimetableEditor";
+import Navbar from "@/components/Navbar";
+import AnimatedBackground from "@/components/AnimatedBackground";
+import { fetchGroups, GroupConfig } from "@/config/college";
+import { DAYS, getTodayName } from "@/firebase/timetable";
+import { useWeekTimetable } from "@/hooks/useTimetable";
+import type { Day } from "@/firebase/timetable";
+import { ChevronRight, Edit3, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export default function AdminTimetablePage() {
-  const { user } = useAuth();
+const AdminTimetablePage = () => {
+  const { user }    = useAuth();
+  const navigate    = useNavigate();
+  const todayName   = getTodayName();
 
-  const [groups, setGroups] = useState<GroupConfig[]>([]);
-  const [group,    setGroup]    = useState<string>("");
-  const [section,  setSection]  = useState<string>("");
-  const [day,      setDay]      = useState<Day>("Monday");
-  const [semester, setSemester] = useState<number>(1);
-
-  // 🆕 session of selected group
-  const [session, setSession] = useState<"foreNoon" | "afterNoon">("foreNoon");
+  const [groups,        setGroups]        = useState<GroupConfig[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<GroupConfig | null>(null);
+  const [selectedSec,   setSelectedSec]   = useState<string>("");
+  const [selectedDay,   setDay]           = useState<Day>(todayName);
+  const [loadingGroups, setLoadingGroups] = useState(true);
 
   useEffect(() => {
-    fetchGroups().then(g => {
-      setGroups(g);
-
-      if (g.length > 0) {
-        const first = g[0];
-        setGroup(first.groupCode);
-        setSection(first.sections[0] ?? "A");
-
-        // 🆕 set session from config
-        setSession(first.session ?? "foreNoon");
-      }
-    });
+    fetchGroups()
+      .then(g => {
+        setGroups(g);
+        if (g.length > 0) {
+          setSelectedGroup(g[0]);
+          setSelectedSec(g[0].sections[0] || "A");
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingGroups(false));
   }, []);
 
-  const selectedGroup = groups.find(g => g.groupCode === group);
-  const sections = selectedGroup?.sections ?? [];
+  const { week, loading: ttLoading } = useWeekTimetable(
+    selectedGroup?.groupCode, selectedSec || undefined
+  );
 
-  // 🆕 update session when group changes
-  useEffect(() => {
-    if (!selectedGroup) return;
-    setSession(selectedGroup.session ?? "foreNoon");
-  }, [group, selectedGroup]);
+  const dayData  = week?.[selectedDay];
+  const fnSlots  = dayData?.foreNoon  ?? [];
+  const anSlots  = dayData?.afterNoon ?? [];
+  const hasSlots = fnSlots.length > 0 || anSlots.length > 0;
 
-  if (!user || user.role !== "admin") {
-    return (
-      <div className="p-6">
-        <Card className="p-6">Admins only.</Card>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold">Manage Timetable</h1>
-
-      <Card className="p-4 grid gap-3 sm:grid-cols-4">
-
-        {/* GROUP */}
-        <div>
-          <Label className="text-xs">Group</Label>
-          <Select value={group} onValueChange={(v) => {
-            setGroup(v);
-            const g = groups.find(g => g.groupCode === v);
-            const s = g?.sections ?? [];
-
-            setSection(s[0] ?? "A");
-
-            // 🆕 update session
-            setSession(g?.session ?? "foreNoon");
+  const SlotRow = ({ slot, session }: { slot: any; session: "FN"|"AN" }) => (
+    <div className="flex items-center gap-3 p-3 border-b" style={{ borderColor:"var(--bg-2)" }}>
+      <div className="w-16 text-center shrink-0">
+        <p className="text-xs font-bold" style={{ color:"var(--navy)" }}>{slot.startTime}</p>
+        <p className="text-[10px]" style={{ color:"var(--text-3)" }}>{slot.endTime}</p>
+        <span className="badge text-[9px] mt-0.5"
+          style={{
+            background: session==="FN" ? "rgba(15,45,94,0.1)" : "rgba(232,96,28,0.1)",
+            color:      session==="FN" ? "var(--navy)"         : "var(--orange)",
           }}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {groups.map(g => (
-                <SelectItem key={g.groupCode} value={g.groupCode}>
-                  {g.groupCode}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* SECTION */}
-        <div>
-          <Label className="text-xs">Section</Label>
-          <Select value={section} onValueChange={setSection}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {sections.map(s => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* SEMESTER */}
-        <div>
-          <Label className="text-xs">Semester</Label>
-          <Select value={String(semester)} onValueChange={(v) => setSemester(Number(v))}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {SEMESTERS.map(s => (
-                <SelectItem key={s} value={String(s)}>Sem {s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* DAY */}
-        <div>
-          <Label className="text-xs">Day</Label>
-          <Select value={day} onValueChange={(v) => setDay(v as Day)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {DAYS.map(d => (
-                <SelectItem key={d} value={d}>{d}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </Card>
-
-      {/* 🆕 SESSION DISPLAY */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm">Session:</span>
-        <Badge>
-          {session === "foreNoon" ? "Fore Noon" : "After Noon"}
-        </Badge>
+          {session}
+        </span>
       </div>
-
-      {/* EDITOR */}
-      {group && section && (
-        <TimetableEditor
-          group={group}
-          section={section}
-          day={day}
-          semester={semester}
-          session={session}   // 🆕 VERY IMPORTANT
-          adminUid={user.uid}
-        />
-      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+          {slot.subjectName}
+        </p>
+        <p className="text-xs" style={{ color:"var(--orange)" }}>{slot.lecturerName}</p>
+        {slot.room && <p className="text-xs" style={{ color:"var(--text-3)" }}>Room: {slot.room}</p>}
+      </div>
     </div>
   );
-}
+
+  return (
+    <div className="relative min-h-screen">
+      <AnimatedBackground />
+      <div className="relative z-10">
+        <Navbar />
+        <div className="max-w-2xl mx-auto p-4 pb-8">
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5 animate-fade-in-up">
+            <div>
+              <h1 className="text-xl font-bold" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+                Timetable
+              </h1>
+              <p className="text-sm" style={{ color:"var(--text-3)" }}>View &amp; manage all class schedules</p>
+            </div>
+            {selectedGroup && selectedSec && (
+              <button
+                onClick={() => navigate(`/timetable/edit/${selectedGroup.groupCode}/${selectedSec}/${selectedDay}`)}
+                className="btn-orange text-xs flex items-center gap-2"
+                style={{ width:"auto", padding:"9px 16px" }}>
+                <Edit3 size={14} /> Edit Schedule
+              </button>
+            )}
+          </div>
+
+          {/* Group + Section + Day filters */}
+          <div className="ndc-card mb-4 stagger-1">
+            <div className="p-4 flex flex-wrap gap-3">
+              {/* Group selector */}
+              <select
+                value={selectedGroup?.groupCode || ""}
+                onChange={e => {
+                  const g = groups.find(x => x.groupCode === e.target.value);
+                  if (g) { setSelectedGroup(g); setSelectedSec(g.sections[0] || "A"); }
+                }}
+                className="ndc-input" style={{ width:"auto", padding:"7px 12px", fontSize:"13px" }}
+                disabled={loadingGroups}>
+                {loadingGroups
+                  ? <option>Loading…</option>
+                  : groups.map(g => <option key={g.groupCode} value={g.groupCode}>{g.groupCode}</option>)
+                }
+              </select>
+
+              {/* Section selector */}
+              <select
+                value={selectedSec}
+                onChange={e => setSelectedSec(e.target.value)}
+                className="ndc-input" style={{ width:"auto", padding:"7px 12px", fontSize:"13px" }}>
+                {(selectedGroup?.sections ?? []).map(s => (
+                  <option key={s} value={s}>Section {s}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Day selector */}
+            <div className="px-4 pb-4">
+              <div className="ndc-tabs overflow-x-auto gap-1">
+                {DAYS.map(d => (
+                  <button key={d} onClick={() => setDay(d)}
+                    className={`ndc-tab whitespace-nowrap ${selectedDay === d ? "active" : ""}`}
+                    style={{ minWidth:56, fontSize:11 }}>
+                    {d === todayName ? `${d.slice(0,3)} ✦` : d.slice(0,3)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Loading */}
+          {(loadingGroups || ttLoading) && (
+            <div className="space-y-2">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="h-14 rounded-[16px] animate-pulse"
+                  style={{ background:"rgba(15,45,94,0.06)" }} />
+              ))}
+            </div>
+          )}
+
+          {/* Empty */}
+          {!loadingGroups && !ttLoading && !hasSlots && (
+            <div className="ndc-card text-center py-12 stagger-2">
+              <Clock size={32} className="mx-auto mb-3 opacity-30" style={{ color:"var(--navy)" }} />
+              <p className="font-bold mb-2" style={{ fontFamily:"Sora,sans-serif", color:"var(--navy)" }}>
+                No timetable for {selectedGroup?.groupCode} Sec {selectedSec} on {selectedDay}
+              </p>
+              {selectedGroup && selectedSec && (
+                <button
+                  onClick={() => navigate(`/timetable/edit/${selectedGroup.groupCode}/${selectedSec}/${selectedDay}`)}
+                  className="btn-orange text-xs px-4 py-2" style={{ width:"auto" }}>
+                  <Edit3 size={13} /> Create Schedule
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Timetable slots */}
+          {!loadingGroups && !ttLoading && hasSlots && (
+            <div className="ndc-card stagger-2">
+              <div className="ndc-card-header">
+                <h3>{selectedGroup?.groupCode} Sec {selectedSec} — {selectedDay}</h3>
+                <span className="badge badge-orange text-[10px]">
+                  {fnSlots.length + anSlots.length} periods
+                </span>
+              </div>
+
+              {fnSlots.length > 0 && (
+                <>
+                  <div className="px-4 py-2" style={{ background:"rgba(15,45,94,0.04)", borderBottom:`1px solid var(--bg-2)` }}>
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color:"var(--navy)" }}>
+                      ☀️ Fore Noon
+                    </span>
+                  </div>
+                  {fnSlots.map(s => <SlotRow key={s.id} slot={s} session="FN" />)}
+                </>
+              )}
+
+              {anSlots.length > 0 && (
+                <>
+                  <div className="px-4 py-2" style={{ background:"rgba(232,96,28,0.04)", borderBottom:`1px solid var(--bg-2)` }}>
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color:"var(--orange)" }}>
+                      🌤 After Noon
+                    </span>
+                  </div>
+                  {anSlots.map(s => <SlotRow key={s.id} slot={s} session="AN" />)}
+                </>
+              )}
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminTimetablePage;
