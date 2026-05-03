@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import AnimatedBackground from "./AnimatedBackground";
 import { COLLEGE_WEBSITE } from "@/config/college";
-import { Bell, Globe, Calendar, BookOpen, GraduationCap, ChevronRight, Clock } from "lucide-react";
+import { Bell, Globe, Calendar, BookOpen, GraduationCap, ChevronRight, Clock, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getNotifications, getStudentsByClass } from "@/firebase/firestore";
 import type { Notice } from "@/firebase/firestore";
@@ -59,7 +59,7 @@ const LecturerDashboard = () => {
     { icon:<BookOpen size={20}/>,      label:"Marks",         value:isIncharge?"Manage":"View",  bg:"rgba(139,92,246,0.1)", color:"#7c3aed",       onClick:()=>navigate("/marks"),                   stagger:"stagger-3" },
     { icon:<GraduationCap size={20}/>, label:"Students",      value:"List",                      bg:"rgba(245,158,11,0.1)", color:"#d97706",       onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
     { icon:<Globe size={20}/>,         label:"Website",       value:"Visit",                     bg:"rgba(232,96,28,0.08)", color:"var(--orange)", onClick:()=>window.open(COLLEGE_WEBSITE,"_blank"), stagger:"stagger-5" },
-    { icon:<Bell size={20}/>,          label:"Timetable",     value:"Full",                      bg:"rgba(15,45,94,0.08)",  color:"var(--navy)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-6" },
+    { icon:<User size={20}/>,         label:"Profile",       value:"View",                      bg:"rgba(139,92,246,0.1)", color:"#7c3aed",       onClick:()=>navigate("/profile"),                stagger:"stagger-6" },
   ];
 
   const SlotRow = ({ slot, session }: { slot: any; session: "FN"|"AN" }) => (

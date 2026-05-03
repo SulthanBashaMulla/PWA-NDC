@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import AnimatedBackground from "./AnimatedBackground";
 import { COLLEGE_WEBSITE, SEMESTERS, MONTHS, getSheetUrls } from "@/config/college";
-import { Bell, Globe, TrendingUp, BookOpen, Calendar, ChevronRight, Clock } from "lucide-react";
+import { Bell, Globe, TrendingUp, BookOpen, Calendar, ChevronRight, Clock, User } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { getNotifications } from "@/firebase/firestore";
 import type { Notice } from "@/firebase/firestore";
@@ -85,7 +85,7 @@ const StudentDashboard = () => {
     { icon:<Calendar   size={20}/>, label:"Timetable",  value:"Today",             color:"#059669",       bg:"rgba(16,185,129,0.1)", onClick:()=>navigate("/timetable"),                 stagger:"stagger-3" },
     { icon:<Bell       size={20}/>, label:"Notices",    value:`${notices.length}`, color:"#2563eb",       bg:"rgba(37,99,235,0.1)",  onClick:()=>navigate("/notifications"),             stagger:"stagger-4" },
     { icon:<Globe      size={20}/>, label:"Website",    value:"Visit",             color:"var(--orange)", bg:"rgba(232,96,28,0.08)", onClick:()=>window.open(COLLEGE_WEBSITE,"_blank"),  stagger:"stagger-5" },
-    { icon:<Bell       size={20}/>, label:"Profile",    value:"Me",                color:"#7c3aed",       bg:"rgba(139,92,246,0.1)", onClick:()=>{},                                     stagger:"stagger-6" },
+    { icon:<User       size={20}/>, label:"Profile",    value:"View",              color:"#7c3aed",       bg:"rgba(139,92,246,0.1)", onClick:()=>navigate("/profile"),                                     stagger:"stagger-6" },
   ];
 
   return (
