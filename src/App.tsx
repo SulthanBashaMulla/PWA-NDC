@@ -17,6 +17,7 @@ import NotFound      from "./pages/NotFound";
 // Components
 import LecturersListPage     from "./components/LecturersListPage";
 import StudentsListPage      from "./components/StudentsListPage";
+import ProfilePage           from "./components/ProfilePage";
 
 // Timetable — role-based
 import AdminTimetablePage    from "./components/timetable/AdminTimetablePage";
@@ -28,7 +29,7 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
 });
 
-// Full-screen loading spinner
+// ── Loading spinner ───────────────────────────────────────────
 const AuthLoading = () => (
   <div className="relative min-h-screen flex items-center justify-center">
     <AnimatedBackground />
@@ -43,6 +44,7 @@ const AuthLoading = () => (
   </div>
 );
 
+// ── Guards ────────────────────────────────────────────────────
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
@@ -65,7 +67,7 @@ const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Timetable router — role decides component
+// ── Timetable router — role decides component ─────────────────
 const TimetableRouter = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/" replace />;
@@ -74,6 +76,7 @@ const TimetableRouter = () => {
   return <StudentTimetablePage />;
 };
 
+// ── Routes ────────────────────────────────────────────────────
 const AppRoutes = () => (
   <Routes>
     {/* Public */}
@@ -84,9 +87,11 @@ const AppRoutes = () => (
     <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
     <Route path="/marks"         element={<RequireAuth><Marks /></RequireAuth>} />
     <Route path="/attendance"    element={<RequireAuth><Attendance /></RequireAuth>} />
+    <Route path="/profile"       element={<RequireAuth><ProfilePage /></RequireAuth>} />
 
     {/* Timetable */}
-    <Route path="/timetable" element={<RequireAuth><TimetableRouter /></RequireAuth>} />
+    <Route path="/timetable"
+      element={<RequireAuth><TimetableRouter /></RequireAuth>} />
     <Route path="/timetable/edit/:group/:section/:day"
       element={<RequireAdmin><TimetableEditor /></RequireAdmin>} />
 
