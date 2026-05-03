@@ -7,17 +7,16 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 
 // Pages
-import Index           from "./pages/Index";
-import Dashboard       from "./pages/Dashboard";
-import Notifications   from "./pages/Notifications";
-import Circulars       from "./pages/Circulars";
-import Marks           from "./pages/Marks";
-import Attendance      from "./pages/Attendance";
-import NotFound        from "./pages/NotFound";
+import Index         from "./pages/Index";
+import Dashboard     from "./pages/Dashboard";
+import Notifications from "./pages/Notifications";
+import Marks         from "./pages/Marks";
+import Attendance    from "./pages/Attendance";
+import NotFound      from "./pages/NotFound";
 
-// Components (direct imports)
-import LecturersListPage from "./components/LecturersListPage";
-import StudentsListPage  from "./components/StudentsListPage";
+// Components
+import LecturersListPage     from "./components/LecturersListPage";
+import StudentsListPage      from "./components/StudentsListPage";
 
 // Timetable — role-based
 import AdminTimetablePage    from "./components/timetable/AdminTimetablePage";
@@ -44,7 +43,6 @@ const AuthLoading = () => (
   </div>
 );
 
-// Guard: redirect unauthenticated users to /
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
@@ -52,7 +50,6 @@ const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Guard: redirect authenticated users away from login
 const RequireGuest = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
@@ -60,7 +57,6 @@ const RequireGuest = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Guard: admin-only routes
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading)               return <AuthLoading />;
@@ -69,7 +65,7 @@ const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Timetable router — shows correct page per role
+// Timetable router — role decides component
 const TimetableRouter = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/" replace />;
@@ -81,25 +77,20 @@ const TimetableRouter = () => {
 const AppRoutes = () => (
   <Routes>
     {/* Public */}
-    <Route path="/" element={<RequireGuest><Index /></RequireGuest>} />
+    <Route path="/"          element={<RequireGuest><Index /></RequireGuest>} />
 
     {/* Protected — all roles */}
     <Route path="/dashboard"     element={<RequireAuth><Dashboard /></RequireAuth>} />
     <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
-    <Route path="/circulars"     element={<RequireAuth><Circulars /></RequireAuth>} />
     <Route path="/marks"         element={<RequireAuth><Marks /></RequireAuth>} />
     <Route path="/attendance"    element={<RequireAuth><Attendance /></RequireAuth>} />
 
-    {/* Timetable — role decides which component renders */}
+    {/* Timetable */}
     <Route path="/timetable" element={<RequireAuth><TimetableRouter /></RequireAuth>} />
+    <Route path="/timetable/edit/:group/:section/:day"
+      element={<RequireAdmin><TimetableEditor /></RequireAdmin>} />
 
-    {/* Timetable editor — admin only */}
-    <Route
-      path="/timetable/edit/:group/:section/:day"
-      element={<RequireAdmin><TimetableEditor /></RequireAdmin>}
-    />
-
-    {/* Admin lists — accessible by admin + lecturer */}
+    {/* Lists */}
     <Route path="/admin/lecturers" element={<RequireAuth><LecturersListPage /></RequireAuth>} />
     <Route path="/admin/students"  element={<RequireAuth><StudentsListPage /></RequireAuth>} />
 

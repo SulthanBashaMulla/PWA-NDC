@@ -4,39 +4,40 @@ import Navbar from "./Navbar";
 import AnimatedBackground from "./AnimatedBackground";
 import { COLLEGE_WEBSITE, fetchGroups, fetchDepartments } from "@/config/college";
 import {
-  Bell, FileText, Globe, Users, GraduationCap,
+  Bell, Globe, Users, GraduationCap,
   Shield, Settings, BarChart3, ChevronRight,
   TrendingUp, Calendar, Download,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-  getNotifications, getCirculars,
-  getAllStudents, getAllLecturers,
-} from "@/firebase/firestore";
-import type { Notice, Circular } from "@/firebase/firestore";
-import { getTodayName, DAYS } from "@/firebase/timetable";
-import { useWeekTimetable } from "@/hooks/useTimetable";
+import { getNotifications, getAllStudents, getAllLecturers } from "@/firebase/firestore";
+import type { Notice } from "@/firebase/firestore";
+import { getTodayName } from "@/firebase/timetable";
 
 const AdminDashboard = () => {
   const { user }   = useAuth();
   const navigate   = useNavigate();
 
   const [notices,       setNotices]       = useState<Notice[]>([]);
-  const [circulars,     setCirculars]     = useState<Circular[]>([]);
   const [studentCount,  setStudentCount]  = useState(0);
   const [lecturerCount, setLecturerCount] = useState(0);
   const [groupCount,    setGroupCount]    = useState(0);
   const [deptCount,     setDeptCount]     = useState(0);
   const [loading,       setLoading]       = useState(true);
 
-  const now        = new Date();
+  // Live clock
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const hour       = now.getHours();
   const greet      = hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
   const todayName  = getTodayName();
   const designation = (user as any)?.designation || "Administrator";
 
-  const seenNotice   = localStorage.getItem("seen_notice");
-  const isNewNotice  = !!notices[0] && notices[0].id !== seenNotice;
+  const seenNotice  = localStorage.getItem("seen_notice");
+  const isNewNotice = !!notices[0] && notices[0].id !== seenNotice;
 
   useEffect(() => {
     Promise.all([
@@ -44,19 +45,16 @@ const AdminDashboard = () => {
         setNotices(d);
         if (d[0]) localStorage.setItem("seen_notice", d[0].id);
       }),
-      getCirculars().then(setCirculars),
       getAllStudents().then(d  => setStudentCount(d.length)),
       getAllLecturers().then(d => setLecturerCount(d.length)),
-      fetchGroups().then(g => {
-        setGroupCount(g.length);
-      }),
+      fetchGroups().then(g     => setGroupCount(g.length)),
       fetchDepartments().then(d => setDeptCount(d.length)),
     ])
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  // Stats
+  // Stats — 4 cards
   const stats = [
     { label:"Students",    value:studentCount,  color:"var(--navy)",   bg:"rgba(15,45,94,0.08)",   icon:<GraduationCap size={18}/>, onClick:()=>navigate("/admin/students")  },
     { label:"Lecturers",   value:lecturerCount, color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  icon:<Users size={18}/>,         onClick:()=>navigate("/admin/lecturers") },
@@ -64,16 +62,16 @@ const AdminDashboard = () => {
     { label:"Departments", value:deptCount,     color:"#7c3aed",       bg:"rgba(139,92,246,0.08)", icon:<Shield size={18}/>,        onClick:()=>{}                           },
   ];
 
-  // Management panels
+  // Management panels — NO circulars
   const panels = [
-    { icon:<Bell size={22}/>,          label:"Notifications",  isNew:isNewNotice, color:"var(--navy)",   bg:"rgba(15,45,94,0.1)",    onClick:()=>navigate("/notifications"),           stagger:"stagger-1" },
-    { icon:<Calendar size={22}/>,       label:"Timetable",                    color:"var(--orange)", bg:"rgba(232,96,28,0.1)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-2" },
-    { icon:<Users size={22}/>,          label:"Lecturers",                        color:"#2563eb",       bg:"rgba(37,99,235,0.1)",   onClick:()=>navigate("/admin/lecturers"),         stagger:"stagger-3" },
-    { icon:<GraduationCap size={22}/>,  label:"Students",                      color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
-    { icon:<FileText size={22}/>,       label:"Circulars",                   color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>navigate("/circulars"),               stagger:"stagger-5" },
-    { icon:<Download size={22}/>,       label:"Download",      sub:"Export data",                         color:"#d97706",       bg:"rgba(245,158,11,0.1)",  onClick:()=>navigate("/download"),                stagger:"stagger-6" },
-    { icon:<Globe size={22}/>,          label:"Website",                     color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-1" },
-    { icon:<Settings size={22}/>,       label:"Settings",                      color:"#475569",       bg:"rgba(100,116,139,0.1)", onClick:()=>{},                                   stagger:"stagger-2" },
+    { icon:<Bell size={22}/>,         label:"Notifications", sub:"Manage notices",  isNew:isNewNotice, color:"var(--navy)",   bg:"rgba(15,45,94,0.1)",    onClick:()=>navigate("/notifications"),           stagger:"stagger-1" },
+    { icon:<Calendar size={22}/>,      label:"Timetable",     sub:"Manage schedule",                    color:"var(--orange)", bg:"rgba(232,96,28,0.1)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-2" },
+    { icon:<Users size={22}/>,         label:"Lecturers",     sub:"Faculty list",                        color:"#2563eb",       bg:"rgba(37,99,235,0.1)",   onClick:()=>navigate("/admin/lecturers"),         stagger:"stagger-3" },
+    { icon:<GraduationCap size={22}/>, label:"Students",      sub:"Student list",                        color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
+    { icon:<Download size={22}/>,      label:"Download",      sub:"Export data",                         color:"#d97706",       bg:"rgba(245,158,11,0.1)",  onClick:()=>navigate("/download"),                stagger:"stagger-5" },
+    { icon:<Globe size={22}/>,         label:"Website",       sub:"College portal",                      color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-6" },
+    { icon:<Shield size={22}/>,        label:"Profile",       sub:"My details",                          color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>{},                                   stagger:"stagger-1" },
+    { icon:<Settings size={22}/>,      label:"Settings",      sub:"System config",                       color:"#475569",       bg:"rgba(100,116,139,0.1)", onClick:()=>{},                                   stagger:"stagger-2" },
   ];
 
   return (
@@ -83,7 +81,7 @@ const AdminDashboard = () => {
         <Navbar />
         <div className="max-w-2xl mx-auto p-4 space-y-4 pb-8">
 
-          {/* Hero */}
+          {/* Hero — with live clock */}
           <div className="ndc-hero stagger-1">
             <div className="relative z-10 flex items-start justify-between">
               <div className="flex-1">
@@ -100,7 +98,9 @@ const AdminDashboard = () => {
                   </span>
                 </div>
               </div>
-              <div className="text-right">
+
+              {/* Date + Time */}
+              <div className="text-right ml-4 shrink-0">
                 <p className="text-xs" style={{ color:"rgba(255,255,255,0.5)", fontFamily:"Sora,sans-serif" }}>
                   {now.toLocaleDateString("en-IN",{ weekday:"short", day:"numeric", month:"short" })}
                 </p>
@@ -118,7 +118,7 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-2 gap-3">
               {stats.map((s, i) => (
                 <div key={s.label} onClick={s.onClick}
-                  className={`stat-card stagger-${i+2} ${s.onClick ? "cursor-pointer" : ""}`}>
+                  className={`stat-card stagger-${i+2} ${s.onClick.toString() !== "(()=>{})" ? "cursor-pointer" : ""}`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:s.bg }}>
                       <span style={{ color:s.color }}>{s.icon}</span>
@@ -141,7 +141,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Management panels */}
+          {/* Management panels — 4 columns, 2 rows */}
           <div>
             <p className="section-title mb-3 stagger-3">Management</p>
             <div className="grid grid-cols-4 gap-3">
@@ -163,7 +163,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Notice board */}
+          {/* Notice board — notifications only */}
           <div className="stagger-4">
             <div className="flex items-center justify-between mb-3">
               <p className="section-title">Notice Board</p>
@@ -174,31 +174,33 @@ const AdminDashboard = () => {
               </button>
             </div>
             <div className="ndc-card">
-              <div className="divide-y" style={{ borderColor:"var(--bg-2)" }}>
-                {notices.length === 0 ? (
-                  <div className="p-6 text-center">
-                    <Bell size={28} className="mx-auto mb-2 opacity-30" style={{ color:"var(--navy)" }} />
-                    <p className="text-sm font-semibold mb-3" style={{ color:"var(--text-2)" }}>No notices posted yet</p>
-                    <button onClick={() => navigate("/notifications")}
-                      className="btn-orange text-xs px-4 py-2" style={{ width:"auto" }}>
-                      Post First Notice
-                    </button>
-                  </div>
-                ) : notices.slice(0, 3).map((n, i) => (
-                  <div key={n.id} onClick={() => navigate("/notifications")}
-                    className="flex items-start gap-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-                      style={{ background:"rgba(232,96,28,0.1)" }}>
-                      <Bell size={14} style={{ color:"var(--orange)" }} />
+              {notices.length === 0 ? (
+                <div className="p-6 text-center">
+                  <Bell size={28} className="mx-auto mb-2 opacity-30" style={{ color:"var(--navy)" }} />
+                  <p className="text-sm font-semibold mb-3" style={{ color:"var(--text-2)" }}>No notices posted yet</p>
+                  <button onClick={() => navigate("/notifications")}
+                    className="btn-orange text-xs px-4 py-2" style={{ width:"auto" }}>
+                    Post First Notice
+                  </button>
+                </div>
+              ) : (
+                <div className="divide-y" style={{ borderColor:"var(--bg-2)" }}>
+                  {notices.slice(0, 3).map((n) => (
+                    <div key={n.id} onClick={() => navigate("/notifications")}
+                      className="flex items-start gap-3 p-3 cursor-pointer hover:bg-gray-50 transition-colors">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                        style={{ background:"rgba(232,96,28,0.1)" }}>
+                        <Bell size={14} style={{ color:"var(--orange)" }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold line-clamp-1" style={{ color:"var(--text-1)" }}>{n.title}</p>
+                        <p className="text-xs mt-0.5 line-clamp-1" style={{ color:"var(--text-3)" }}>{n.content}</p>
+                      </div>
+                      <ChevronRight size={14} style={{ color:"var(--text-3)", flexShrink:0, marginTop:4 }} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold line-clamp-1" style={{ color:"var(--text-1)" }}>{n.title}</p>
-                      <p className="text-xs mt-0.5 line-clamp-1" style={{ color:"var(--text-3)" }}>{n.content}</p>
-                    </div>
-                    <ChevronRight size={14} style={{ color:"var(--text-3)", flexShrink:0, marginTop:4 }} />
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
