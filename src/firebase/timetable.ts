@@ -18,10 +18,10 @@ import { db } from "./config";
 // ── TYPES ─────────────────────────────────────────────────────
 export type Day =
   | "Monday" | "Tuesday" | "Wednesday"
-  | "Thursday" | "Friday" | "Saturday";
+  | "Thursday" | "Friday" | "Saturday" | "Sunday";
 
 export const DAYS: Day[] = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday",
+  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday"
 ];
 
 export type Session = "foreNoon" | "afterNoon";
