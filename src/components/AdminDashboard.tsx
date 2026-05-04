@@ -5,7 +5,7 @@ import AnimatedBackground from "./AnimatedBackground";
 import { COLLEGE_WEBSITE, fetchGroups, fetchDepartments } from "@/config/college";
 import {
   Bell, Globe, Users, GraduationCap,
-  Shield, BarChart3, ChevronRight,
+  Shield, Settings, BarChart3, ChevronRight,
   TrendingUp, Calendar, Download,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -70,7 +70,8 @@ const AdminDashboard = () => {
     { icon:<GraduationCap size={22}/>, label:"Students",      sub:"Student list",                        color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
     { icon:<Download size={22}/>,      label:"Download",      sub:"Export data",                         color:"#d97706",       bg:"rgba(245,158,11,0.1)",  onClick:()=>navigate("/download"),                stagger:"stagger-5" },
     { icon:<Globe size={22}/>,         label:"Website",       sub:"College portal",                      color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-6" },
-    { icon:<Shield size={22}/>,        label:"Profile",       sub:"My details",                          color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>navigate("/profile"),                                   stagger:"stagger-1" },
+    { icon:<Shield size={22}/>,        label:"Profile",       sub:"My details",                          color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>{},                                   stagger:"stagger-1" },
+    { icon:<Settings size={22}/>,      label:"Settings",      sub:"System config",                       color:"#475569",       bg:"rgba(100,116,139,0.1)", onClick:()=>{},                                   stagger:"stagger-2" },
   ];
 
   return (

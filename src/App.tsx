@@ -15,9 +15,11 @@ import Attendance    from "./pages/Attendance";
 import NotFound      from "./pages/NotFound";
 
 // Components
-import LecturersListPage     from "./components/LecturersListPage";
-import StudentsListPage      from "./components/StudentsListPage";
-import ProfilePage           from "./components/ProfilePage";
+import LecturersListPage  from "./components/LecturersListPage";
+import StudentsListPage   from "./components/StudentsListPage";
+import ProfilePage        from "./components/ProfilePage";
+import GroupsPage         from "./components/GroupsPage";
+import DepartmentsPage    from "./components/DepartmentsPage";
 
 // Timetable — role-based
 import AdminTimetablePage    from "./components/timetable/AdminTimetablePage";
@@ -67,7 +69,7 @@ const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// ── Timetable router — role decides component ─────────────────
+// ── Timetable router ──────────────────────────────────────────
 const TimetableRouter = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/" replace />;
@@ -80,7 +82,7 @@ const TimetableRouter = () => {
 const AppRoutes = () => (
   <Routes>
     {/* Public */}
-    <Route path="/"          element={<RequireGuest><Index /></RequireGuest>} />
+    <Route path="/" element={<RequireGuest><Index /></RequireGuest>} />
 
     {/* Protected — all roles */}
     <Route path="/dashboard"     element={<RequireAuth><Dashboard /></RequireAuth>} />
@@ -88,6 +90,10 @@ const AppRoutes = () => (
     <Route path="/marks"         element={<RequireAuth><Marks /></RequireAuth>} />
     <Route path="/attendance"    element={<RequireAuth><Attendance /></RequireAuth>} />
     <Route path="/profile"       element={<RequireAuth><ProfilePage /></RequireAuth>} />
+
+    {/* Admin-only pages */}
+    <Route path="/groups"        element={<RequireAdmin><GroupsPage /></RequireAdmin>} />
+    <Route path="/departments"   element={<RequireAdmin><DepartmentsPage /></RequireAdmin>} />
 
     {/* Timetable */}
     <Route path="/timetable"
