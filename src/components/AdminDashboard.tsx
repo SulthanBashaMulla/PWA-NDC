@@ -5,7 +5,7 @@ import AnimatedBackground from "./AnimatedBackground";
 import { COLLEGE_WEBSITE, fetchGroups, fetchDepartments } from "@/config/college";
 import {
   Bell, Globe, Users, GraduationCap,
-  Shield, Settings, BarChart3, ChevronRight,
+  Shield, BarChart3, ChevronRight,
   TrendingUp, Calendar, Download,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -58,8 +58,8 @@ const AdminDashboard = () => {
   const stats = [
     { label:"Students",    value:studentCount,  color:"var(--navy)",   bg:"rgba(15,45,94,0.08)",   icon:<GraduationCap size={18}/>, onClick:()=>navigate("/admin/students")  },
     { label:"Lecturers",   value:lecturerCount, color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  icon:<Users size={18}/>,         onClick:()=>navigate("/admin/lecturers") },
-    { label:"Groups",      value:groupCount,    color:"#059669",       bg:"rgba(16,185,129,0.08)", icon:<BarChart3 size={18}/>,     onClick:()=>{}                           },
-    { label:"Departments", value:deptCount,     color:"#7c3aed",       bg:"rgba(139,92,246,0.08)", icon:<Shield size={18}/>,        onClick:()=>{}                           },
+    { label:"Groups",      value:groupCount,    color:"#059669",       bg:"rgba(16,185,129,0.08)", icon:<BarChart3 size={18}/>,     onClick:()=>navigate("/groups")                 },
+    { label:"Departments", value:deptCount,     color:"#7c3aed",       bg:"rgba(139,92,246,0.08)", icon:<Shield size={18}/>,        onClick:()=>navigate("/departments")            },
   ];
 
   // Management panels — NO circulars
@@ -70,8 +70,7 @@ const AdminDashboard = () => {
     { icon:<GraduationCap size={22}/>, label:"Students",      sub:"Student list",                        color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
     { icon:<Download size={22}/>,      label:"Download",      sub:"Export data",                         color:"#d97706",       bg:"rgba(245,158,11,0.1)",  onClick:()=>navigate("/download"),                stagger:"stagger-5" },
     { icon:<Globe size={22}/>,         label:"Website",       sub:"College portal",                      color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-6" },
-    { icon:<Shield size={22}/>,        label:"Profile",       sub:"My details",                          color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>{},                                   stagger:"stagger-1" },
-    { icon:<Settings size={22}/>,      label:"Settings",      sub:"System config",                       color:"#475569",       bg:"rgba(100,116,139,0.1)", onClick:()=>{},                                   stagger:"stagger-2" },
+    { icon:<Shield size={22}/>,        label:"Profile",       sub:"My details",                          color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>navigate("/profile"),                                   stagger:"stagger-1" },
   ];
 
   return (
@@ -117,8 +116,8 @@ const AdminDashboard = () => {
             <p className="section-title mb-3 stagger-2">Overview</p>
             <div className="grid grid-cols-2 gap-3">
               {stats.map((s, i) => (
-                <div key={s.label} onClick={s.onClick}
-                  className={`stat-card stagger-${i+2} ${s.onClick.toString() !== "(()=>{})" ? "cursor-pointer" : ""}`}>
+                <button key={s.label} onClick={s.onClick}
+                  className={`stat-card stagger-${i+2} w-full text-left cursor-pointer active:scale-95 transition-transform`}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:s.bg }}>
                       <span style={{ color:s.color }}>{s.icon}</span>
@@ -136,7 +135,7 @@ const AdminDashboard = () => {
                   <div className="progress-bar mt-2">
                     <div className="progress-fill" style={{ width:"70%", background:`linear-gradient(90deg, ${s.color}, ${s.color}aa)` }} />
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
