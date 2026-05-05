@@ -1,28 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#7c3aed" />
+    <meta name="theme-color" content="#0f2d5e" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="NDC" />
 
     <!-- Icons -->
-    <link rel="icon" type="image/png" href="/icons/icon-96.png" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/icon-96.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png" />
 
     <!-- SEO -->
     <title>NDC — National Degree College, Nandyal</title>
-    <meta name="description" content="Student & Staff portal for National Degree College, Nandyal" />
+    <meta name="description" content="Official student and staff portal for National Degree College, Nandyal. Access marks, attendance, timetable and notifications." />
+    <meta name="keywords" content="NDC, National Degree College, Nandyal, student portal, attendance, marks, timetable" />
+    <meta name="author" content="National Degree College, Nandyal" />
+
+    <!-- Open Graph (WhatsApp / social share preview) -->
+    <meta property="og:title" content="NDC — National Degree College, Nandyal" />
+    <meta property="og:description" content="Official student and staff portal for National Degree College, Nandyal." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512.png" />
 
     <!-- Fonts preload -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Prevent flash of wrong color on load -->
+    <style>
+      html, body, #root {
+        background-color: #eef2f9;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

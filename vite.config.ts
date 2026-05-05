@@ -10,12 +10,28 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2020",
     sourcemap: false,
+    // Warn if any chunk exceeds 500KB
+    chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor:   ["react", "react-dom", "react-router-dom"],
-          firebase: ["firebase/app", "firebase/auth", "firebase/firestore"],
-          ui:       ["lucide-react"],
+          // Core React
+          "vendor-react": ["react", "react-dom", "react-router-dom"],
+          // Firebase split into smaller pieces
+          "firebase-core": ["firebase/app", "firebase/auth"],
+          "firebase-db":   ["firebase/firestore"],
+          // UI icons
+          "icons":         ["lucide-react"],
+          // Sheets/CSV parsing
+          "sheets":        ["papaparse"],
+          // Radix primitives
+          "radix":         [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-tooltip",
+            "@radix-ui/react-select",
+            "@radix-ui/react-popover",
+          ],
         },
       },
     },
