@@ -32,6 +32,9 @@ import TimetableEditor from "./components/timetable/TimetableEditor";
 
 import { COLLEGE_LOGO_URL } from "@/config/college";
 
+// ─────────────────────────────────────────────────────────────
+// Query Client
+// ─────────────────────────────────────────────────────────────
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -42,17 +45,38 @@ const queryClient = new QueryClient({
 });
 
 // ─────────────────────────────────────────────────────────────
+// Dynamic Quotes
+// ─────────────────────────────────────────────────────────────
+const splashQuotes = [
+  "From Classroom to Careers, Together we Learn — Sulthan Basha",
+  "Dream Big. Study Hard. Stay Humble.",
+  "Knowledge is the Beginning of Greatness.",
+  "Learn Today, Lead Tomorrow.",
+  "Success Starts with Discipline.",
+  "Where Learning Meets Opportunity.",
+  "Education Builds the Future.",
+  "Empowering Students Every Day.",
+  "Small Progress is Still Progress.",
+  "Your Future Begins Here.",
+  "Believe. Learn. Achieve.",
+  "Excellence Through Education.",
+];
+
+const randomQuote =
+  splashQuotes[Math.floor(Math.random() * splashQuotes.length)];
+
+// ─────────────────────────────────────────────────────────────
 // Splash Screen
 // ─────────────────────────────────────────────────────────────
 const AuthLoading = () => (
   <div
-    className="fixed inset-0 flex flex-col items-center justify-center"
+    className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
     style={{
       background:
         "linear-gradient(160deg, #081c3d 0%, #0f2d5e 50%, #1a3f7a 100%)",
     }}
   >
-    {/* Background dots */}
+    {/* Background pattern */}
     <div
       className="absolute inset-0 opacity-10"
       style={{
@@ -62,7 +86,19 @@ const AuthLoading = () => (
       }}
     />
 
-    {/* Top orange line */}
+    {/* Glow */}
+    <div
+      className="absolute"
+      style={{
+        width: 300,
+        height: 300,
+        borderRadius: "50%",
+        background: "rgba(232,96,28,0.15)",
+        filter: "blur(80px)",
+      }}
+    />
+
+    {/* Top line */}
     <div
       className="absolute top-0 left-0 right-0"
       style={{
@@ -72,32 +108,32 @@ const AuthLoading = () => (
       }}
     />
 
-    {/* Content */}
+    {/* Main content */}
     <div className="relative z-10 flex flex-col items-center px-8 text-center">
       {/* Logo */}
       <div
         style={{
-          width: 110,
-          height: 110,
-          borderRadius: 24,
+          width: 115,
+          height: 115,
+          borderRadius: 28,
           background: "white",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: 24,
           overflow: "hidden",
+          marginBottom: 24,
           boxShadow:
-            "0 8px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08)",
+            "0 10px 45px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.08)",
           animation:
-            "splashLogoIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both",
+            "splashLogoIn 0.7s cubic-bezier(0.34,1.56,0.64,1) both",
         }}
       >
         <img
           src={COLLEGE_LOGO_URL}
           alt="NDC"
           style={{
-            width: 90,
-            height: 90,
+            width: 92,
+            height: 92,
             objectFit: "contain",
           }}
           onError={(e) => {
@@ -106,15 +142,15 @@ const AuthLoading = () => (
         />
       </div>
 
-      {/* Title */}
+      {/* College name */}
       <h1
         style={{
           color: "white",
           fontFamily: "Sora, sans-serif",
-          fontSize: 20,
+          fontSize: 22,
           fontWeight: 700,
-          marginBottom: 4,
-          letterSpacing: "0.01em",
+          letterSpacing: "0.02em",
+          marginBottom: 6,
           animation: "splashFadeUp 0.5s 0.3s ease-out both",
         }}
       >
@@ -127,23 +163,23 @@ const AuthLoading = () => (
           color: "rgba(255,255,255,0.55)",
           fontFamily: "Sora, sans-serif",
           fontSize: 13,
-          marginBottom: 32,
-          animation: "splashFadeUp 0.5s 0.4s ease-out both",
+          marginBottom: 34,
+          animation: "splashFadeUp 0.5s 0.45s ease-out both",
         }}
       >
         Nandyal
       </p>
 
-      {/* Progress bar */}
+      {/* Progress */}
       <div
         style={{
-          width: 170,
-          height: 3,
+          width: 180,
+          height: 4,
           borderRadius: 999,
           overflow: "hidden",
           background: "rgba(255,255,255,0.12)",
-          marginBottom: 34,
-          animation: "splashFadeUp 0.5s 0.5s ease-out both",
+          marginBottom: 36,
+          animation: "splashFadeUp 0.5s 0.55s ease-out both",
         }}
       >
         <div
@@ -151,24 +187,24 @@ const AuthLoading = () => (
             height: "100%",
             borderRadius: 999,
             background:
-              "linear-gradient(90deg, #e8601c, #f07840)",
-            animation: "splashBar 2.2s ease-in-out forwards",
+              "linear-gradient(90deg, #e8601c, #ff8a50)",
+            animation: "splashBar 2.5s ease-in-out forwards",
           }}
         />
       </div>
 
-      {/* Quote */}
+      {/* Dynamic quote */}
       <p
         style={{
-          color: "rgba(255,255,255,0.82)",
+          color: "rgba(255,255,255,0.84)",
           fontSize: 17,
           lineHeight: 1.7,
           fontFamily: "serif",
-          maxWidth: 320,
-          animation: "splashFadeUp 0.5s 0.6s ease-out both",
+          maxWidth: 340,
+          animation: "splashFadeUp 0.5s 0.65s ease-out both",
         }}
       >
-        From Classroom to Careers, Together we Learn — Sulthan
+        {randomQuote}
       </p>
     </div>
 
@@ -311,7 +347,6 @@ const TimetableRouter = () => {
 // ─────────────────────────────────────────────────────────────
 const AppRoutes = () => (
   <Routes>
-    {/* Public */}
     <Route
       path="/"
       element={
@@ -321,7 +356,6 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Protected */}
     <Route
       path="/dashboard"
       element={
@@ -367,7 +401,6 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Admin */}
     <Route
       path="/groups"
       element={
@@ -386,7 +419,6 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Timetable */}
     <Route
       path="/timetable"
       element={
@@ -405,7 +437,6 @@ const AppRoutes = () => (
       }
     />
 
-    {/* Lists */}
     <Route
       path="/admin/lecturers"
       element={
@@ -424,7 +455,6 @@ const AppRoutes = () => (
       }
     />
 
-    {/* 404 */}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
