@@ -221,7 +221,7 @@ const AuthLoading = () => (
 // ─────────────────────────────────────────────────────────────
 // Artificial Loading Hook
 // ─────────────────────────────────────────────────────────────
-const useMinimumLoading = (delay = 2200) => {
+const useMinimumLoading = (delay = 2500) => {
   const [minLoading, setMinLoading] = useState(true);
 
   useEffect(() => {
