@@ -7,25 +7,25 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 
 // Pages
-import Index         from "./pages/Index";
-import Dashboard     from "./pages/Dashboard";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import Notifications from "./pages/Notifications";
-import Marks         from "./pages/Marks";
-import Attendance    from "./pages/Attendance";
-import NotFound      from "./pages/NotFound";
+import Marks from "./pages/Marks";
+import Attendance from "./pages/Attendance";
+import NotFound from "./pages/NotFound";
 
 // Components
-import LecturersListPage  from "./components/LecturersListPage";
-import StudentsListPage   from "./components/StudentsListPage";
-import ProfilePage        from "./components/ProfilePage";
-import GroupsPage         from "./components/GroupsPage";
-import DepartmentsPage    from "./components/DepartmentsPage";
+import LecturersListPage from "./components/LecturersListPage";
+import StudentsListPage from "./components/StudentsListPage";
+import ProfilePage from "./components/ProfilePage";
+import GroupsPage from "./components/GroupsPage";
+import DepartmentsPage from "./components/DepartmentsPage";
 
 // Timetable — role-based
-import AdminTimetablePage    from "./components/timetable/AdminTimetablePage";
+import AdminTimetablePage from "./components/timetable/AdminTimetablePage";
 import LecturerTimetablePage from "./components/timetable/LecturerTimetablePage";
-import StudentTimetablePage  from "./components/timetable/StudentTimetablePage";
-import TimetableEditor       from "./components/timetable/TimetableEditor";
+import StudentTimetablePage from "./components/timetable/StudentTimetablePage";
+import TimetableEditor from "./components/timetable/TimetableEditor";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 60_000 } },
@@ -50,21 +50,21 @@ const AuthLoading = () => (
 const RequireAuth = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
-  if (!user)   return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/" replace />;
   return <>{children}</>;
 };
 
 const RequireGuest = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <AuthLoading />;
-  if (user)    return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
 
 const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading)               return <AuthLoading />;
-  if (!user)                 return <Navigate to="/" replace />;
+  if (loading) return <AuthLoading />;
+  if (!user) return <Navigate to="/" replace />;
   if (user.role !== "admin") return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 };
@@ -73,7 +73,7 @@ const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
 const TimetableRouter = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/" replace />;
-  if (user.role === "admin")    return <AdminTimetablePage />;
+  if (user.role === "admin") return <AdminTimetablePage />;
   if (user.role === "lecturer") return <LecturerTimetablePage />;
   return <StudentTimetablePage />;
 };
