@@ -52,12 +52,9 @@ const splashQuotes = [
   "Dream Big. Study Hard. Stay Humble.",
   "Knowledge is the Beginning of Greatness.",
   "Learn Today, Lead Tomorrow.",
-  "Success Starts with Discipline.",
   "Where Learning Meets Opportunity.",
   "Education Builds the Future.",
   "Empowering Students Every Day.",
-  "Small Progress is Still Progress.",
-  "Your Future Begins Here.",
   "Believe. Learn. Achieve.",
   "Excellence Through Education.",
 ];
