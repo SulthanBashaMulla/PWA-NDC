@@ -48,7 +48,7 @@ const queryClient = new QueryClient({
 // Dynamic Quotes
 // ─────────────────────────────────────────────────────────────
 const splashQuotes = [
-  "From Classroom to Careers, Together we Learn — Sulthan Basha",
+  "From Classroom to Careers, Together we Learn — Sulthan",
   "Dream Big. Study Hard. Stay Humble.",
   "Knowledge is the Beginning of Greatness.",
   "Learn Today, Lead Tomorrow.",
@@ -254,7 +254,7 @@ const AuthLoading = () => (
 // ─────────────────────────────────────────────────────────────
 // Artificial Loading Hook
 // ─────────────────────────────────────────────────────────────
-const useMinimumLoading = (delay = 2500) => {
+const useMinimumLoading = (delay = 2800) => {
   const [minLoading, setMinLoading] = useState(true);
 
   useEffect(() => {
