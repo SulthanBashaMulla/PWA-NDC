@@ -154,9 +154,9 @@ export default function StudentsListPage() {
                     </div>
                     <p className="text-xs font-mono mb-2" style={{ color:"var(--orange)" }}>Roll: {stu.rollNo}</p>
                     <div className="flex flex-wrap gap-1.5">
-                      <span className="badge badge-navy text-[10px]">🏫 {stu.group}</span>
-                      <span className="badge badge-gray text-[10px]">📌 Sec {stu.section}</span>
-                      {stu.phone && <span className="badge badge-gray text-[10px]">📞 {stu.phone}</span>}
+                      <span className="badge badge-navy text-[10px]"> {stu.group}</span>
+                      <span className="badge badge-gray text-[10px]">  {stu.section} Sec</span>
+
                       <span className={`badge text-[10px] ${stu.status==="active"?"badge-green":"badge-red"}`}>
                         {stu.status==="active"?"✅":"🚫"} {stu.status}
                       </span>
