@@ -160,6 +160,31 @@ const LecturerDashboard = () => {
             </div>
           </div>
 
+
+          {/* Latest notice only — no circulars */}
+          <div className="stagger-5">
+            <p className="section-title mb-3">Latest Updates</p>
+            <div className="space-y-2">
+              {notices.slice(0,3).map((n, i) => (
+                <div key={n.id} className="notice-item" onClick={() => navigate("/notifications")}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <span className="badge badge-navy text-[10px] mb-1">Notice</span>
+                      <p className="text-sm font-semibold line-clamp-1" style={{ color:"var(--text-1)" }}>
+                        {n.title}
+                      </p>
+                    </div>
+                    <ChevronRight size={14} style={{ color:"var(--text-3)", flexShrink:0, marginTop:2 }} />
+                  </div>
+                </div>
+              ))}
+              {notices.length === 0 && (
+                <div className="text-center py-6 rounded-xl" style={{ background:"var(--surface-2)" }}>
+                  <p className="text-sm" style={{ color:"var(--text-3)" }}>No notices yet</p>
+                </div>
+              )}
+            </div>
+          </div>
           {/* ── Today's timetable — ALL slots ── */}
           <div className="stagger-3">
             <div className="flex items-center justify-between mb-3">
@@ -223,30 +248,7 @@ const LecturerDashboard = () => {
             </div>
           </div>
 
-          {/* Latest notice only — no circulars */}
-          <div className="stagger-5">
-            <p className="section-title mb-3">Latest Updates</p>
-            <div className="space-y-2">
-              {notices.slice(0,3).map((n, i) => (
-                <div key={n.id} className="notice-item" onClick={() => navigate("/notifications")}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <span className="badge badge-navy text-[10px] mb-1">Notice</span>
-                      <p className="text-sm font-semibold line-clamp-1" style={{ color:"var(--text-1)" }}>
-                        {n.title}
-                      </p>
-                    </div>
-                    <ChevronRight size={14} style={{ color:"var(--text-3)", flexShrink:0, marginTop:2 }} />
-                  </div>
-                </div>
-              ))}
-              {notices.length === 0 && (
-                <div className="text-center py-6 rounded-xl" style={{ background:"var(--surface-2)" }}>
-                  <p className="text-sm" style={{ color:"var(--text-3)" }}>No notices yet</p>
-                </div>
-              )}
-            </div>
-          </div>
+
 
         </div>
       </div>
