@@ -62,7 +62,7 @@ const AdminDashboard = () => {
     { label:"Departments", value:deptCount,     color:"#7c3aed",       bg:"rgba(139,92,246,0.08)", icon:<Shield size={18}/>,        onClick:()=>navigate("/departments")            },
   ];
 
-  // Management panels — NO circulars
+  // Management panels 
   const panels = [
     { icon:<Bell size={22}/>,         label:"Notifications", sub:"Manage notices",  isNew:isNewNotice, color:"var(--navy)",   bg:"rgba(15,45,94,0.1)",    onClick:()=>navigate("/notifications"),           stagger:"stagger-1" },
     { icon:<Calendar size={22}/>,      label:"Timetable",     sub:"Manage schedule",                    color:"var(--orange)", bg:"rgba(232,96,28,0.1)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-2" },
@@ -140,28 +140,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Management panels — 4 columns, 2 rows */}
-          <div>
-            <p className="section-title mb-3 stagger-3">Management</p>
-            <div className="grid grid-cols-4 gap-3">
-              {panels.map(p => (
-                <div key={p.label} onClick={p.onClick} className={`action-panel relative ${p.stagger}`}>
-                  {p.isNew && (
-                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5 z-10">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
-                    </span>
-                  )}
-                  <div className="p-icon" style={{ background:p.bg }}>
-                    <span style={{ color:p.color }}>{p.icon}</span>
-                  </div>
-                  <p className="p-value text-[11px]" style={{ color:p.color }}>{p.label}</p>
-                  <p className="p-label text-[9px]">{p.sub}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Notice board — notifications only */}
           <div className="stagger-4">
             <div className="flex items-center justify-between mb-3">
@@ -210,6 +188,27 @@ const AdminDashboard = () => {
             </button>
           </div>
 
+{/* Management panels — 4 columns, 2 rows */}
+          <div>
+            <p className="section-title mb-3 stagger-3">Management</p>
+            <div className="grid grid-cols-4 gap-3">
+              {panels.map(p => (
+                <div key={p.label} onClick={p.onClick} className={`action-panel relative ${p.stagger}`}>
+                  {p.isNew && (
+                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5 z-10">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                    </span>
+                  )}
+                  <div className="p-icon" style={{ background:p.bg }}>
+                    <span style={{ color:p.color }}>{p.icon}</span>
+                  </div>
+                  <p className="p-value text-[11px]" style={{ color:p.color }}>{p.label}</p>
+                  <p className="p-label text-[9px]">{p.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
