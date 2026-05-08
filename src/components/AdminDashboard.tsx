@@ -64,13 +64,13 @@ const AdminDashboard = () => {
 
   // Management panels 
   const panels = [
-    { icon:<Bell size={22}/>,         label:"Notifications", sub:"Manage notices",  isNew:isNewNotice, color:"var(--navy)",   bg:"rgba(15,45,94,0.1)",    onClick:()=>navigate("/notifications"),           stagger:"stagger-1" },
-    { icon:<Calendar size={22}/>,      label:"Timetable",     sub:"Manage schedule",                    color:"var(--orange)", bg:"rgba(232,96,28,0.1)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-2" },
-    { icon:<Users size={22}/>,         label:"Lecturers",     sub:"Faculty list",                        color:"#2563eb",       bg:"rgba(37,99,235,0.1)",   onClick:()=>navigate("/admin/lecturers"),         stagger:"stagger-3" },
-    { icon:<GraduationCap size={22}/>, label:"Students",      sub:"Student list",                        color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
-    { icon:<Download size={22}/>,      label:"Download",      sub:"Export data",                         color:"#d97706",       bg:"rgba(245,158,11,0.1)",  onClick:()=>navigate("/download"),                stagger:"stagger-5" },
-    { icon:<Globe size={22}/>,         label:"Website",       sub:"College portal",                      color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-6" },
-    { icon:<Shield size={22}/>,        label:"Profile",       sub:"My details",                          color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>navigate("/profile"),                                   stagger:"stagger-1" },
+    { icon:<Bell size={22}/>,         label:"Notices",  isNew:isNewNotice, color:"var(--navy)",   bg:"rgba(15,45,94,0.1)",    onClick:()=>navigate("/notifications"),           stagger:"stagger-1" },
+    { icon:<Calendar size={22}/>,      label:"Timetable",                    color:"var(--orange)", bg:"rgba(232,96,28,0.1)",   onClick:()=>navigate("/timetable"),               stagger:"stagger-2" },
+    { icon:<Users size={22}/>,         label:"Lecturers",                       color:"#2563eb",       bg:"rgba(37,99,235,0.1)",   onClick:()=>navigate("/admin/lecturers"),         stagger:"stagger-3" },
+    { icon:<GraduationCap size={22}/>, label:"Students",                        color:"#059669",       bg:"rgba(16,185,129,0.1)",  onClick:()=>navigate("/admin/students"),          stagger:"stagger-4" },
+    { icon:<Download size={22}/>,      label:"Download",                      color:"#d97706",       bg:"rgba(245,158,11,0.1)",  onClick:()=>navigate("/download"),                stagger:"stagger-5" },
+    { icon:<Globe size={22}/>,         label:"Website",                   color:"var(--orange)", bg:"rgba(232,96,28,0.08)",  onClick:()=>window.open(COLLEGE_WEBSITE),         stagger:"stagger-6" },
+    { icon:<Shield size={22}/>,        label:"Profile",                         color:"#7c3aed",       bg:"rgba(139,92,246,0.1)",  onClick:()=>navigate("/profile"),                                   stagger:"stagger-1" },
   ];
 
   return (
@@ -158,30 +158,7 @@ const AdminDashboard = () => {
               <Bell size={15} /> Post New Notification
             </button>
           </div>
-
-{/* Management panels — 4 columns, 2 rows */}
-          <div>
-            <p className="section-title mb-3 stagger-3">Management</p>
-            <div className="grid grid-cols-4 gap-3">
-              {panels.map(p => (
-                <div key={p.label} onClick={p.onClick} className={`action-panel relative ${p.stagger}`}>
-                  {p.isNew && (
-                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5 z-10">
-                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
-                    </span>
-                  )}
-                  <div className="p-icon" style={{ background:p.bg }}>
-                    <span style={{ color:p.color }}>{p.icon}</span>
-                  </div>
-                  <p className="p-value text-[11px]" style={{ color:p.color }}>{p.label}</p>
-                  <p className="p-label text-[9px]">{p.sub}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Stats */}
+{/* Stats */}
           <div>
             <p className="section-title mb-3 stagger-2">Overview</p>
             <div className="grid grid-cols-2 gap-3">
@@ -209,6 +186,29 @@ const AdminDashboard = () => {
               ))}
             </div>
           </div>
+          
+{/* Management panels — 4 columns, 2 rows */}
+          <div>
+            <p className="section-title mb-3 stagger-3">Management</p>
+            <div className="grid grid-cols-4 gap-3">
+              {panels.map(p => (
+                <div key={p.label} onClick={p.onClick} className={`action-panel relative ${p.stagger}`}>
+                  {p.isNew && (
+                    <span className="absolute top-2 right-2 flex h-2.5 w-2.5 z-10">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75 animate-ping" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                    </span>
+                  )}
+                  <div className="p-icon" style={{ background:p.bg }}>
+                    <span style={{ color:p.color }}>{p.icon}</span>
+                  </div>
+                  <p className="p-value text-[11px]" style={{ color:p.color }}>{p.label}</p>
+                  <p className="p-label text-[9px]">{p.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
           
         </div>
       </div>
