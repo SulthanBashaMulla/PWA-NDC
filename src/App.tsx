@@ -95,15 +95,7 @@ const AuthLoading = () => (
       }}
     />
 
-    {/* Top line */}
-    <div
-      className="absolute top-0 left-0 right-0"
-      style={{
-        height: 4,
-        background:
-          "linear-gradient(90deg, #e8601c, #f07840, #e8601c)",
-      }}
-    />
+
 
     {/* Main content */}
     <div className="relative z-10 flex flex-col items-center px-8 text-center">
@@ -194,7 +186,7 @@ const AuthLoading = () => (
       <p
         style={{
           color: "rgba(255,255,255,0.84)",
-          fontSize: 17,
+          fontSize: 14,
           lineHeight: 1.7,
           fontFamily: "serif",
           maxWidth: 340,
@@ -205,15 +197,7 @@ const AuthLoading = () => (
       </p>
     </div>
 
-    {/* Bottom line */}
-    <div
-      className="absolute bottom-0 left-0 right-0"
-      style={{
-        height: 4,
-        background:
-          "linear-gradient(90deg, #e8601c, #f07840, #e8601c)",
-      }}
-    />
+
 
     {/* Animations */}
     <style>{`
