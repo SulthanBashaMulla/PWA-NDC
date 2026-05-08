@@ -144,6 +144,23 @@ const StudentDashboard = () => {
             </div>
           </div>
 
+
+{/* ── Latest notice only (no circulars) ── */}
+          <div className="stagger-4">
+            <div className="ndc-card cursor-pointer hover:shadow-md transition-shadow" onClick={()=>navigate("/notifications")}>
+              <div className="ndc-card-header"><h3>Latest Notice</h3><Bell size={13} className="text-orange-300" /></div>
+              <div className="p-3">
+                <p className="text-xs font-semibold line-clamp-2" style={{ color:"var(--text-1)" }}>
+                  {notices[0]?.title || "No notices yet"}
+                </p>
+                <div className="flex items-center gap-1 mt-2">
+                  <span className="text-[10px]" style={{ color:"var(--orange)" }}>View all notices</span>
+                  <ChevronRight size={10} style={{ color:"var(--orange)" }} />
+                </div>
+              </div>
+            </div>
+          </div>
+          
           {/* ── Today's timetable — ALL slots ── */}
           <div className="stagger-2">
             <div className="flex items-center justify-between mb-3">
@@ -238,21 +255,7 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* ── Latest notice only (no circulars) ── */}
-          <div className="stagger-4">
-            <div className="ndc-card cursor-pointer hover:shadow-md transition-shadow" onClick={()=>navigate("/notifications")}>
-              <div className="ndc-card-header"><h3>Latest Notice</h3><Bell size={13} className="text-orange-300" /></div>
-              <div className="p-3">
-                <p className="text-xs font-semibold line-clamp-2" style={{ color:"var(--text-1)" }}>
-                  {notices[0]?.title || "No notices yet"}
-                </p>
-                <div className="flex items-center gap-1 mt-2">
-                  <span className="text-[10px]" style={{ color:"var(--orange)" }}>View all notices</span>
-                  <ChevronRight size={10} style={{ color:"var(--orange)" }} />
-                </div>
-              </div>
-            </div>
-          </div>
+          
 
           {/* ── Marks / Attendance ── */}
           <div className="ndc-card stagger-5">
