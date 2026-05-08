@@ -111,35 +111,6 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Stats */}
-          <div>
-            <p className="section-title mb-3 stagger-2">Overview</p>
-            <div className="grid grid-cols-2 gap-3">
-              {stats.map((s, i) => (
-                <button key={s.label} onClick={s.onClick}
-                  className={`stat-card stagger-${i+2} w-full text-left cursor-pointer active:scale-95 transition-transform`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:s.bg }}>
-                      <span style={{ color:s.color }}>{s.icon}</span>
-                    </div>
-                    <TrendingUp size={14} style={{ color:"var(--text-3)" }} />
-                  </div>
-                  <p className="text-3xl font-black mb-0.5" style={{ fontFamily:"Sora,sans-serif", color:s.color }}>
-                    {loading
-                      ? <span className="h-6 w-10 rounded animate-pulse inline-block" style={{ background:"var(--bg-2)" }} />
-                      : s.value}
-                  </p>
-                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color:"var(--text-3)", fontFamily:"Sora,sans-serif" }}>
-                    {s.label}
-                  </p>
-                  <div className="progress-bar mt-2">
-                    <div className="progress-fill" style={{ width:"70%", background:`linear-gradient(90deg, ${s.color}, ${s.color}aa)` }} />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Notice board — notifications only */}
           <div className="stagger-4">
             <div className="flex items-center justify-between mb-3">
@@ -209,6 +180,36 @@ const AdminDashboard = () => {
               ))}
             </div>
           </div>
+          
+          {/* Stats */}
+          <div>
+            <p className="section-title mb-3 stagger-2">Overview</p>
+            <div className="grid grid-cols-2 gap-3">
+              {stats.map((s, i) => (
+                <button key={s.label} onClick={s.onClick}
+                  className={`stat-card stagger-${i+2} w-full text-left cursor-pointer active:scale-95 transition-transform`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:s.bg }}>
+                      <span style={{ color:s.color }}>{s.icon}</span>
+                    </div>
+                    <TrendingUp size={14} style={{ color:"var(--text-3)" }} />
+                  </div>
+                  <p className="text-3xl font-black mb-0.5" style={{ fontFamily:"Sora,sans-serif", color:s.color }}>
+                    {loading
+                      ? <span className="h-6 w-10 rounded animate-pulse inline-block" style={{ background:"var(--bg-2)" }} />
+                      : s.value}
+                  </p>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color:"var(--text-3)", fontFamily:"Sora,sans-serif" }}>
+                    {s.label}
+                  </p>
+                  <div className="progress-bar mt-2">
+                    <div className="progress-fill" style={{ width:"70%", background:`linear-gradient(90deg, ${s.color}, ${s.color}aa)` }} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          
         </div>
       </div>
     </div>
