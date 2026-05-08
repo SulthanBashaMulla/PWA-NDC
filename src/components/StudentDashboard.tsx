@@ -160,7 +160,8 @@ const StudentDashboard = () => {
               </div>
             </div>
           </div>
-          
+
+
           {/* ── Today's timetable — ALL slots ── */}
           <div className="stagger-2">
             <div className="flex items-center justify-between mb-3">
@@ -256,7 +257,6 @@ const StudentDashboard = () => {
           </div>
 
           
-
           {/* ── Marks / Attendance ── */}
           <div className="ndc-card stagger-5">
             <div className="p-4">
