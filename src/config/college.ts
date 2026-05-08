@@ -12,7 +12,7 @@ export const COLLEGE_LOGO_URL = "https://i.postimg.cc/pXbTGLXB/ndc-logo.png";
 export const SEMESTERS = [1, 2, 3, 4, 5, 6];
 
 export const MONTHS = [
-"January", "February", "March",  "June", "July", "August", "September", "October",
+"January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
   "November", "December", 
 ];
 
